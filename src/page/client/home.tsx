@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import "../css/home.css";
 
 const TerrazaApp = () => {
@@ -188,8 +189,8 @@ const TerrazaApp = () => {
                   
                   {userMenuOpen && (
                     <div className="user-dropdown">
-                      <div className="dropdown-item">
-                        <span className="material-symbols-outlined"></span>
+                      <div className="dropdown-item" onClick={() => window.location.href = '/client/Profile'}>
+                        <span className="material-symbols-outlined" ></span>
                         Mi Perfil
                       </div>
                       <div className="dropdown-item">

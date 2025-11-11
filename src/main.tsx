@@ -5,11 +5,16 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 
 // Páginas
+// -------------LOGIN PARA TODOS LOS USUARIOS-----------
 import Login from './page/common/Login';
-import ClientHome from './page/client/home';
-import HostDashboard from './page/host/Dashboard';
-import AdminDashboard from './page/admin/Dashboard';
 
+// ---------PAGINAS DE CLIENTE--------------
+import ClientHome from './page/client/home';
+import ClientProfile from './page/client/Profile';
+// ---------PAGINAS DE HOST--------------
+import HostDashboard from './page/host/Dashboard';
+// ---------PAGINAS DE HOST--------------
+import AdminDashboard from './page/admin/Dashboard';
 // Rutas protegidas
 import ProtectedRoute from './routers/ProtectedRoute';
 
@@ -19,7 +24,7 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         {/* Ruta pública */}
         <Route path="/" element={<Login />} />
-
+{/* -------------------------------------CLIENTES QUE RENTAN TERRAZAS-------------------------------------------------------------------------------------- */}
         {/* Cliente */}
         <Route
           path="/client/home"
@@ -29,7 +34,16 @@ createRoot(document.getElementById('root')!).render(
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/client/Profile"
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <ClientProfile/>
+            </ProtectedRoute>
+          }
+        />
 
+{/* -------------------------------------HOST DUEÑOS DE LAS TERRAZAS-------------------------------------------------------------------------------------- */}
         {/* Host */}
         <Route
           path="/host/dashboard"
@@ -39,7 +53,7 @@ createRoot(document.getElementById('root')!).render(
             </ProtectedRoute>
           }
         />
-
+{/* -------------------------------------ADMINISTRADORES DE LA PWA-------------------------------------------------------------------------------------- */}
         {/* Admin */}
         <Route
           path="/admin/dashboard"
