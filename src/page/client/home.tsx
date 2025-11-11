@@ -1,129 +1,581 @@
-import React from "react";
-import './page/css/home.css';
-const Home: React.FC = () => {
+import React, { useState, useRef, useEffect } from 'react';
+import "../css/home.css";
+
+
+
+const TerrazaApp = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [invitados, setInvitados] = useState('');
+  const [precioMin, setPrecioMin] = useState('');
+  const [precioMax, setPrecioMax] = useState('');
+  const [calificacionMin, setCalificacionMin] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('todos');
+  
+  const userMenuRef = useRef(null);
+
+  // Datos de terrazas
+  const terrazas = [
+    {
+      id: 1,
+      nombre: "Terraza del Sol",
+      ubicacion: "Colonia Roma Norte, CDMX",
+      precio: 5000,
+      calificacion: 4.8,
+      capacidad: 50,
+      imagen: "https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=600&h=400&fit=crop",
+      categoria: "popular",
+      descripcion: "Amplia terraza con vista panorámica al atardecer"
+    },
+    {
+      id: 2,
+      nombre: "Vistas al Jardín",
+      ubicacion: "Polanco, CDMX",
+      precio: 7500,
+      calificacion: 4.9,
+      capacidad: 30,
+      imagen: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=600&h=400&fit=crop",
+      categoria: "lujo",
+      descripcion: "Terraza elegante con jardín privado y alberca"
+    },
+    {
+      id: 3,
+      nombre: "Rooftop Moderno Condesa",
+      ubicacion: "Condesa, CDMX",
+      precio: 8000,
+      calificacion: 4.7,
+      capacidad: 40,
+      imagen: "https://images.unsplash.com/photo-1564013797767-2f7b0eb10aac?w=600&h=400&fit=crop",
+      categoria: "moderno",
+      descripcion: "Diseño contemporáneo con mobiliario minimalista"
+    },
+    {
+      id: 4,
+      nombre: "El Mirador del Valle",
+      ubicacion: "Lomas de Chapultepec, CDMX",
+      precio: 12000,
+      calificacion: 5.0,
+      capacidad: 60,
+      imagen: "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=600&h=400&fit=crop",
+      categoria: "lujo",
+      descripcion: "Vista exclusiva con amenities de primera clase"
+    },
+    {
+      id: 5,
+      nombre: "Patio Colonial Coyoacán",
+      ubicacion: "Coyoacán, CDMX",
+      precio: 6000,
+      calificacion: 4.6,
+      capacidad: 35,
+      imagen: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&h=400&fit=crop",
+      categoria: "rustico",
+      descripcion: "Ambiente tradicional con detalles coloniales"
+    },
+    {
+      id: 6,
+      nombre: "Loft Industrial Roma",
+      ubicacion: "Colonia Roma, CDMX",
+      precio: 9500,
+      calificacion: 4.8,
+      capacidad: 45,
+      imagen: "https://images.unsplash.com/photo-1513584684374-8bab748fbf90?w=600&h=400&fit=crop",
+      categoria: "moderno",
+      descripcion: "Estilo industrial con elementos urbanos"
+    },
+    {
+      id: 7,
+      nombre: "Oasis Urbano Pedregal",
+      ubicacion: "Pedregal, CDMX",
+      precio: 11000,
+      calificacion: 4.9,
+      capacidad: 55,
+      imagen: "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=600&h=400&fit=crop",
+      categoria: "lujo",
+      descripcion: "Refugio urbano con áreas verdes y alberca"
+    },
+    {
+      id: 8,
+      nombre: "Rincón Bohemio",
+      ubicacion: "Narvarte, CDMX",
+      precio: 4500,
+      calificacion: 4.7,
+      capacidad: 25,
+      imagen: "https://images.unsplash.com/photo-1591474200742-8e512e6f98f8?w=600&h=400&fit=crop",
+      categoria: "bohemio",
+      descripcion: "Ambiente acogedor con decoración artística"
+    }
+  ];
+
+  // Filtrar terrazas
+  const terrazasFiltradas = terrazas.filter(terraza => {
+    const matchSearch = 
+      searchQuery === '' ||
+      terraza.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      terraza.ubicacion.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchUbicacion = 
+      ubicacion === '' || 
+      terraza.ubicacion.toLowerCase().includes(ubicacion.toLowerCase());
+    
+    const matchPrecioMin = 
+      precioMin === '' || 
+      terraza.precio >= parseInt(precioMin);
+    
+    const matchPrecioMax = 
+      precioMax === '' || 
+      terraza.precio <= parseInt(precioMax);
+    
+    const matchCalificacion = 
+      calificacionMin === '' || 
+      terraza.calificacion >= parseFloat(calificacionMin);
+    
+    const matchInvitados = 
+      invitados === '' || 
+      terraza.capacidad >= parseInt(invitados);
+    
+    const matchCategoria = 
+      activeFilter === 'todos' || 
+      terraza.categoria === activeFilter;
+    
+    return matchSearch && matchUbicacion && matchPrecioMin && 
+           matchPrecioMax && matchCalificacion && matchInvitados && matchCategoria;
+  });
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const limpiarFiltros = () => {
+    setSearchQuery('');
+    setFecha('');
+    setInvitados('');
+    setPrecioMin('');
+    setPrecioMax('');
+    setCalificacionMin('');
+    setUbicacion('');
+    setActiveFilter('todos');
+  };
+
+  const categorias = [
+    { id: 'todos', nombre: 'Todas', icono: 'apps' },
+    { id: 'popular', nombre: 'Populares', icono: 'local_fire_department' },
+    { id: 'lujo', nombre: 'Lujo', icono: 'diamond' },
+    { id: 'moderno', nombre: 'Modernas', icono: 'architecture' },
+    { id: 'rustico', nombre: 'Rústicas', icono: 'nature' },
+    { id: 'bohemio', nombre: 'Bohemias', icono: 'palette' }
+  ];
+
   return (
-    <div className="font-display bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary min-h-screen">
-      <div className="relative flex flex-col min-h-screen overflow-x-hidden">
-        {/* HEADER */}
-        <header className="flex items-center justify-between whitespace-nowrap border-b border-border-light dark:border-border-dark px-4 py-4 sticky top-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm z-50">
-          <div className="flex items-center gap-4">
-            <div className="text-primary size-7">
-              <svg
-                fill="none"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z"
-                  fill="currentColor"
-                />
-              </svg>
+    <div className="terraza-app">
+      {/* Header */}
+      <header className="app-header">
+        <div className="header-container">
+          <div className="logo-section">
+            <div className="logo">
+              <span className="material-symbols-outlined">terrace</span>
+              <h1>TerrazaApp</h1>
             </div>
-            <h2 className="text-xl font-bold">TerrazaApp</h2>
           </div>
-
-          <div className="hidden md:flex flex-1 justify-end gap-8">
-            <div className="flex items-center gap-9">
-              <a className="text-sm font-medium hover:text-primary" href="#">
-                Explorar
-              </a>
-              <a className="text-sm font-medium hover:text-primary" href="#">
-                Publicar mi terraza
-              </a>
+          
+          <nav className="nav-section">
+            <div className="nav-links">
+              <a className="nav-link" href="#explorar">Explorar</a>
+              <a className="nav-link" href="#reservaciones">Reservaciones</a>
             </div>
-
-            <div className="flex items-center gap-4">
-              <button className="flex items-center justify-center rounded-full h-10 w-10 bg-background-light dark:bg-surface-dark hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+            
+            <div className="user-section" ref={userMenuRef}>
+              <button className="icon-btn notification-btn">
                 <span className="material-symbols-outlined">notifications</span>
+                <span className="notification-badge">3</span>
               </button>
-              <div
-                className="bg-center bg-cover rounded-full size-10"
-                style={{
-                  backgroundImage:
-                    "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAEZcII-tQ5nd0pAbeAST_qqGzjtDtS4J7Z9Iqe_ik8niuYGn-OJRq1VCs2VZajlhMHF6Ath2O9KDNO-2-bR01NukbMhVAc8u1Ng9yF8FJhw2zt1nfQvKo0UdDh7n8bcdzvgQ8idSynsV-Uvvspudg6FaIaZKlcyn6aLNfmIYKIh-d1kiyvb2Rxf_EUcTL-F6RkXvlE_sYwku0DQDgknR21SN2lN_BwCj123nZWKsw--wluJ9Lev-IufjxzFAGNULcP6WUFrYZl3mQ')",
-                }}
+              
+              <div 
+                className="user-profile"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              >
+                <div className="avatar">
+                  <span className="material-symbols-outlined">person</span>
+                </div>
+                <span className="user-name">Ana García</span>
+                <span className="material-symbols-outlined dropdown-icon">expand_more</span>
+                
+                {userMenuOpen && (
+                  <div className="user-dropdown">
+                    <div className="dropdown-item">
+                      <span className="material-symbols-outlined">person</span>
+                      Mi Perfil
+                    </div>
+                    <div className="dropdown-item">
+                      <span className="material-symbols-outlined">settings</span>
+                      Configuración
+                    </div>
+                    <div className="dropdown-divider"></div>
+                    <div className="dropdown-item">
+                      <span className="material-symbols-outlined">logout</span>
+                      Cerrar Sesión
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-container">
+          <div className="hero-content">
+            <div className="hero-text">
+              <h1 className="hero-title">
+                Encuentra la <span className="highlight">terraza perfecta</span> para tu evento
+              </h1>
+              <p className="hero-description">
+                Explora, compara y reserva el lugar ideal para tu próxima celebración. 
+                Más de 500 terrazas disponibles en la CDMX.
+              </p>
+              
+              <div className="hero-stats">
+                <div className="stat">
+                  <div className="stat-number">500+</div>
+                  <div className="stat-label">Terrazas</div>
+                </div>
+                <div className="stat">
+                  <div className="stat-number">4.8</div>
+                  <div className="stat-label">Rating Promedio</div>
+                </div>
+                <div className="stat">
+                  <div className="stat-number">24/7</div>
+                  <div className="stat-label">Soporte</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="hero-cards">
+              <div className="floating-card card-1">
+                <div className="card-image" style={{backgroundImage: 'url(https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=300&h=200&fit=crop)'}}></div>
+                <div className="card-content">
+                  <h4>Terraza del Sol</h4>
+                  <div className="card-rating">
+                    <span className="material-symbols-outlined">star</span>
+                    <span>4.8</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="floating-card card-2">
+                <div className="card-image" style={{backgroundImage: 'url(https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=300&h=200&fit=crop)'}}></div>
+                <div className="card-content">
+                  <h4>Vistas al Jardín</h4>
+                  <div className="card-rating">
+                    <span className="material-symbols-outlined">star</span>
+                    <span>4.9</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="floating-card card-3">
+                <div className="card-image" style={{backgroundImage: 'url(https://images.unsplash.com/photo-1564013797767-2f7b0eb10aac?w=300&h=200&fit=crop)'}}></div>
+                <div className="card-content">
+                  <h4>Rooftop Moderno</h4>
+                  <div className="card-rating">
+                    <span className="material-symbols-outlined">star</span>
+                    <span>4.7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Search Section */}
+      <section className="search-section">
+        <div className="search-container">
+          <div className="search-bar">
+            <div className="search-input-container">
+              <span className="material-symbols-outlined search-icon">🔍</span>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Buscar terrazas por nombre o ubicación..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-          </div>
-
-          <button className="md:hidden flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-            <span className="material-symbols-outlined">menu</span>
-          </button>
-        </header>
-
-        {/* MAIN */}
-        <main className="py-6 sm:py-8 lg:py-12 px-4">
-          <div className="mb-6">
-            <h1 className="text-3xl md:text-4xl font-black">
-              Encuentra la terraza perfecta para tu evento
-            </h1>
-            <p className="text-base text-text-light-secondary dark:text-text-dark-secondary">
-              Explora, compara y reserva el lugar ideal para tu próxima
-              celebración.
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sticky top-[73px] bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm py-4 mb-6">
-            <div className="flex-grow">
-              <div className="flex items-center rounded-full border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 shadow-sm">
-                <span className="material-symbols-outlined pl-5 text-text-light-secondary dark:text-text-dark-secondary">
-                  search
-                </span>
+            
+            <div className="search-filters">
+              {/* <div className="filter-group">
+                <span className="material-symbols-outlined">calendario</span>
                 <input
-                  className="flex-1 bg-transparent px-4 text-base focus:outline-none"
-                  placeholder="¿Dónde será tu evento?"
+                  type="date"
+                  className="filter-input"
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
                 />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto">
-              <button className="flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 h-10 hover:border-primary/50 hover:bg-primary/10 transition">
-                <span className="material-symbols-outlined">calendar_month</span>
-                <p className="text-sm font-medium">Fecha</p>
-              </button>
-              <button className="flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 h-10 hover:border-primary/50 hover:bg-primary/10 transition">
+              </div> */}
+              
+              {/* <div className="filter-group">
                 <span className="material-symbols-outlined">group</span>
-                <p className="text-sm font-medium">Invitados</p>
-              </button>
-              <button className="flex items-center gap-2 rounded-full bg-primary text-white px-4 h-10 hover:opacity-90 transition">
-                <span className="material-symbols-outlined">tune</span>
-                <p className="text-sm font-medium">Filtros</p>
+                <input
+                  type="number"
+                  className="filter-input"
+                  placeholder="Invitados"
+                  value={invitados}
+                  onChange={(e) => setInvitados(e.target.value)}
+                />
+              </div> */}
+              
+              <button 
+                className={`filter-btn ${showFilters ? 'active' : ''}`}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <span className="material-symbols-outlined"></span>
+                Filtros
               </button>
             </div>
           </div>
 
-          {/* Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
-            {/* Ejemplo de tarjeta */}
-            <div className="flex flex-col gap-3 group">
-              <div className="relative overflow-hidden rounded-xl">
-                <div
-                  className="w-full aspect-[4/3] bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
-                  style={{
-                    backgroundImage:
-                      "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCDR4F505oIgIxlviG1zbviGawXPSJWnzkoe0567Ue2njmc1ys_f6iFOB4wFMiYkv5izp_DjvNb0ir_ZPHJKjC1Rm_msCIQ5IlvlD0AYxu-YcAjij-Sb5XbfgA28M_JPZZsuuU1bBIXmr8sddZbFjbpINaEuUyUWGXi0TbFd_NDx9NI0hHQ63Xu_fR67NzoxhuvEYXVcqzhhY8Phr2EwyZkd91tIyMiGfDPCeXvcRIYBLByQeq-kxd-Zz3vSwmQCAldqJ_70pcRhfk')",
-                  }}
-                />
-                <button className="absolute top-3 right-3 text-white bg-black/30 rounded-full h-8 w-8 flex items-center justify-center hover:bg-primary/80 transition">
-                  <span className="material-symbols-outlined">favorite</span>
+          {/* Category Filters */}
+          <div className="category-filters">
+            {categorias.map(categoria => (
+              <button
+                key={categoria.id}
+                className={`category-btn ${activeFilter === categoria.id ? 'active' : ''}`}
+                onClick={() => setActiveFilter(categoria.id)}
+              >
+                <span className="material-symbols-outlined">{categoria.icono}</span>
+                {categoria.nombre}
+              </button>
+            ))}
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="advanced-filters">
+              <div className="filters-header">
+                <h3>Filtros Avanzados</h3>
+                <button className="clear-filters" onClick={limpiarFiltros}>
+                  <span className="material-symbols-outlined"></span>
+                  Limpiar Filtros
                 </button>
               </div>
-              <div>
-                <p className="font-bold text-base">Terraza del Sol</p>
-                <p className="text-sm text-text-light-secondary dark:text-text-dark-secondary">
-                  Colonia Roma Norte, CDMX
-                </p>
-                <p className="text-sm font-medium mt-1">
-                  <span className="font-bold">$5,000</span> / evento
-                </p>
+              
+              <div className="filters-grid">
+                <div className="filter-field">
+                  <label>Ubicación específica</label>
+                  <div className="input-with-icon">
+                    <span className="material-symbols-outlined">Ubicacion</span>
+                    <input
+                      type="text"
+                      placeholder="Ej: Roma, Polanco..."
+                      value={ubicacion}
+                      onChange={(e) => setUbicacion(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="filter-field">
+                  <label>Precio mínimo</label>
+                  <div className="input-with-icon">
+                    <span className="material-symbols-outlined">$</span>
+                    <input
+                      type="number"
+                      placeholder="Mínimo"
+                      value={precioMin}
+                      onChange={(e) => setPrecioMin(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="filter-field">
+                  <label>Precio máximo</label>
+                  <div className="input-with-icon">
+                    <span className="material-symbols-outlined">$</span>
+                    <input
+                      type="number"
+                      placeholder="Máximo"
+                      value={precioMax}
+                      onChange={(e) => setPrecioMax(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="filter-field">
+                  <label>Calificación mínima</label>
+                  <div className="input-with-icon">
+                    <span className="material-symbols-outlined"></span>
+                    <select
+                      value={calificacionMin}
+                      onChange={(e) => setCalificacionMin(e.target.value)}
+                    >
+                      <option value="">Cualquier calificación</option>
+                      <option value="4.5">4.5+ Estrellas</option>
+                      <option value="4.0">4.0+ Estrellas</option>
+                      <option value="3.5">3.5+ Estrellas</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Results Section */}
+      <section className="results-section">
+        <div className="results-container">
+          <div className="results-header">
+            <div className="results-info">
+              <h2>
+                {terrazasFiltradas.length > 0 
+                  ? `${terrazasFiltradas.length} terrazas encontradas` 
+                  : 'No se encontraron terrazas'}
+              </h2>
+              <p>Descubre el lugar perfecto para tu evento</p>
+            </div>
+            
+            {terrazasFiltradas.length > 0 && (
+              <div className="sort-options">
+                <span>Ordenar por:</span>
+                <select className="sort-select">
+                  <option>Recomendados</option>
+                  <option>Precio: menor a mayor</option>
+                  <option>Precio: mayor a menor</option>
+                  <option>Mejor calificadas</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Terraza Grid */}
+          <div className="terraza-grid">
+            {terrazasFiltradas.map(terraza => (
+              <div key={terraza.id} className="terraza-card">
+                <div className="card-image-section">
+                  <div 
+                    className="card-image"
+                    style={{backgroundImage: `url(${terraza.imagen})`}}
+                  ></div>
+                  <button className="favorite-btn">
+                    <span className="material-symbols-outlined">favorite</span>
+                  </button>
+                  <div className="card-badge">{terraza.categoria}</div>
+                </div>
+                
+                <div className="card-content">
+                  <div className="card-header">
+                    <h3 className="card-title">{terraza.nombre}</h3>
+                    <div className="rating">
+                      <span className="material-symbols-outlined">star</span>
+                      <span className="rating-value">{terraza.calificacion}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="card-location">
+                    <span className="material-symbols-outlined">location_on</span>
+                    {terraza.ubicacion}
+                  </div>
+                  
+                  <p className="card-description">{terraza.descripcion}</p>
+                  
+                  <div className="card-details">
+                    <div className="detail">
+                      <span className="material-symbols-outlined">group</span>
+                      <span>{terraza.capacidad} invitados</span>
+                    </div>
+                  </div>
+                  
+                  <div className="card-footer">
+                    <div className="price">
+                      <span className="price-amount">${terraza.precio.toLocaleString()}</span>
+                      <span className="price-label"> / evento</span>
+                    </div>
+                    <button className="reserve-btn">
+                      <span className="material-symbols-outlined">event_available</span>
+                      Reservar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {terrazasFiltradas.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-icon">
+                <span className="material-symbols-outlined">search_off</span>
+              </div>
+              <h3>No se encontraron terrazas</h3>
+              <p>Intenta ajustar tus filtros de búsqueda</p>
+              <button className="clear-filters-btn" onClick={limpiarFiltros}>
+                Limpiar todos los filtros
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        <div className="footer-container">
+          <div className="footer-content">
+            <div className="footer-section">
+              <div className="footer-logo">
+                <span className="material-symbols-outlined">terrace</span>
+                <h3>TerrazaApp</h3>
+              </div>
+              <p>La plataforma líder para encontrar y reservar terrazas para tus eventos especiales.</p>
+            </div>
+            
+            <div className="footer-section">
+              <h4>Enlaces Rápidos</h4>
+              <a href="#explorar">Explorar Terrazas</a>
+              <a href="#publicar">Publicar Terraza</a>
+              <a href="#ayuda">Centro de Ayuda</a>
+              <a href="#contacto">Contacto</a>
+            </div>
+            
+            <div className="footer-section">
+              <h4>Legal</h4>
+              <a href="#privacidad">Política de Privacidad</a>
+              <a href="#terminos">Términos de Servicio</a>
+              <a href="#cookies">Política de Cookies</a>
+            </div>
+            
+            <div className="footer-section">
+              <h4>Contacto</h4>
+              <p>contacto@terrazaapp.com</p>
+              <p>+52 55 1234 5678</p>
+              <div className="social-links">
+                <a href="#" aria-label="Facebook">📘</a>
+                <a href="#" aria-label="Instagram">📷</a>
+                <a href="#" aria-label="Twitter">🐦</a>
               </div>
             </div>
           </div>
-        </main>
-      </div>
+          
+          <div className="footer-bottom">
+            <p>&copy; 2024 TerrazaApp. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
 
-export default Home;
+export default TerrazaApp;
