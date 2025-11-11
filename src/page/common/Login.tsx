@@ -3,9 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "../css/Login.css";
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
-// Si quieres usar una imagen local, descomenta esta línea y coloca tu imagen en src/assets/
-// import terrazaImage from '../assets/terraza-image.jpg';
-
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,22 +12,42 @@ const Login = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState(""); // ✅ Agregar estado para el nombre
+  const [phone, setPhone] = useState(""); // ✅ Agregar estado para el teléfono
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isLogin && password !== confirmPassword) {
-      alert("Las contraseñas no coinciden");
-      return;
+    if (!isLogin) {
+      // Validaciones para registro
+      if (!name) {
+        alert("El nombre es requerido");
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        alert("Las contraseñas no coinciden");
+        return;
+      }
     }
 
     setLoading(true);
     try {
       const endpoint = isLogin ? "login" : "register";
+      
+      // ✅ Construir el body correctamente para registro
       const body = isLogin 
         ? { email, password }
-        : { email, password, role: userType };
+        : { 
+            name, 
+            email, 
+            password, 
+            role: userType,
+            phone: userType === "host" ? phone : undefined // ✅ Solo enviar phone si es host
+          };
+
+      console.log("Enviando datos:", body); // Para debug
 
       const res = await fetch(`http://localhost:4000/api/auth/${endpoint}`, {
         method: "POST",
@@ -48,6 +65,7 @@ const Login = () => {
 
       if (isLogin) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user)); // ✅ Guardar usuario completo
         localStorage.setItem("role", data.user.role);
 
         switch (data.user.role) {
@@ -66,9 +84,13 @@ const Login = () => {
       } else {
         alert("Registro exitoso! Ahora puedes iniciar sesión.");
         setIsLogin(true);
+        // Limpiar formulario
+        setName("");
         setEmail("");
         setPassword("");
         setConfirmPassword("");
+        setPhone("");
+        setUserType("client");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -80,6 +102,24 @@ const Login = () => {
 
   const handleSocialLogin = (provider: string) => {
     console.log(`Iniciando sesión con ${provider}`);
+  };
+
+  // Función para limpiar formulario al cambiar entre login/registro
+  const handleTabChange = (isLoginTab: boolean) => {
+    setIsLogin(isLoginTab);
+    if (!isLoginTab) {
+      // Al cambiar a registro, limpiar solo contraseñas
+      setPassword("");
+      setConfirmPassword("");
+    } else {
+      // Al cambiar a login, limpiar todo
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setPhone("");
+      setUserType("client");
+    }
   };
 
   return (
@@ -109,13 +149,13 @@ const Login = () => {
             <div className="login-tabs">
               <button 
                 className={`tab ${isLogin ? 'active' : ''}`}
-                onClick={() => setIsLogin(true)}
+                onClick={() => handleTabChange(true)}
               >
                 Iniciar Sesión
               </button>
               <button 
                 className={`tab ${!isLogin ? 'active' : ''}`}
-                onClick={() => setIsLogin(false)}
+                onClick={() => handleTabChange(false)}
               >
                 Registrarse
               </button>
@@ -123,9 +163,24 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
+            {/* Nombre (solo en registro) */}
+            {!isLogin && (
+              <div className="form-group">
+                <label className="form-label">Nombre Completo *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Tu nombre completo"
+                  className="form-input"
+                  required
+                />
+              </div>
+            )}
+
             {/* Email */}
             <div className="form-group">
-              <label className="form-label">Correo Electrónico</label>
+              <label className="form-label">Correo Electrónico *</label>
               <input
                 type="email"
                 value={email}
@@ -136,9 +191,24 @@ const Login = () => {
               />
             </div>
 
+            {/* Teléfono (solo para hosts en registro) */}
+            {!isLogin && userType === "host" && (
+              <div className="form-group">
+                <label className="form-label">Teléfono de Contacto</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+52 55 1234 5678"
+                  className="form-input"
+                />
+                <small className="form-help">Opcional, pero recomendado para propietarios</small>
+              </div>
+            )}
+
             {/* Contraseña */}
             <div className="form-group">
-              <label className="form-label">Contraseña</label>
+              <label className="form-label">Contraseña *</label>
               <div className="password-input-container">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -147,15 +217,14 @@ const Login = () => {
                   placeholder="••••••••"
                   className="form-input password-input"
                   required
+                  minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="password-toggle"
                 >
-                 <span>
-                      {showPassword ? <MdVisibility /> : <MdVisibilityOff />}
-                  </span>
+                  {showPassword ? <MdVisibility /> : <MdVisibilityOff />}
                 </button>
               </div>
             </div>
@@ -163,7 +232,7 @@ const Login = () => {
             {/* Confirmar Contraseña (solo en registro) */}
             {!isLogin && (
               <div className="form-group">
-                <label className="form-label">Confirmar Contraseña</label>
+                <label className="form-label">Confirmar Contraseña *</label>
                 <div className="password-input-container">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
@@ -172,15 +241,14 @@ const Login = () => {
                     placeholder="••••••••"
                     className="form-input password-input"
                     required
+                    minLength={6}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="password-toggle"
                   >
-                    <span>
-                      {showPassword ? <MdVisibility /> : <MdVisibilityOff />}
-                    </span>
+                    {showConfirmPassword ? <MdVisibility /> : <MdVisibilityOff />}
                   </button>
                 </div>
               </div>
@@ -189,11 +257,11 @@ const Login = () => {
             {/* Tipo de usuario (solo en registro) */}
             {!isLogin && (
               <div className="form-group">
-                <label className="form-label">Quiero registrarme como:</label>
+                <label className="form-label">Quiero registrarme como: *</label>
                 <div className="user-type-grid">
                   {[
-                    { value: "client", label: "Cliente", icon: "Usuario" },
-                    { value: "host", label: "Terrazas", icon: "Propietario" },
+                    { value: "client", label: "Cliente", icon: "", description: "Buscar y reservar terrazas" },
+                    { value: "host", label: "Propietario", icon: "", description: "Publicar y administrar terrazas" },
                   ].map((type) => (
                     <button
                       key={type.value}
@@ -207,6 +275,7 @@ const Login = () => {
                         {type.icon}
                       </span>
                       <span className="user-type-label">{type.label}</span>
+                      <span className="user-type-description">{type.description}</span>
                     </button>
                   ))}
                 </div>
@@ -225,11 +294,21 @@ const Login = () => {
             {/* Enlaces adicionales */}
             <div className="form-links">
               {isLogin ? (
-                <a href="#" className="forgot-password">¿Olvidaste tu contraseña?</a>
+                <>
+                  <a href="#" className="forgot-password">¿Olvidaste tu contraseña?</a>
+                  <p className="switch-form">
+                    ¿No tienes cuenta?{" "}
+                  </p>
+                </>
               ) : (
-                <p className="terms-text">
-                  Al registrarte, aceptas nuestros <a href="#">Términos y Condiciones</a>
-                </p>
+                <>
+                  <p className="terms-text">
+                    Al registrarte, aceptas nuestros <a href="#">Términos y Condiciones</a>
+                  </p>
+                  <p className="switch-form">
+                    ¿Ya tienes cuenta?{" "}
+                  </p>
+                </>
               )}
             </div>
 
