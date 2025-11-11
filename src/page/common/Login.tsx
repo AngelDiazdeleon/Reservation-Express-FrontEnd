@@ -1,56 +1,77 @@
-// Login.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../css/Login.css"
+import "../css/Login.css";
+import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
+// Si quieres usar una imagen local, descomenta esta línea y coloca tu imagen en src/assets/
+// import terrazaImage from '../assets/terraza-image.jpg';
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [userType, setUserType] = useState("client");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isLogin && password !== confirmPassword) {
+      alert("Las contraseñas no coinciden");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:4000/api/auth/login", {
+      const endpoint = isLogin ? "login" : "register";
+      const body = isLogin 
+        ? { email, password }
+        : { email, password, role: userType };
+
+      const res = await fetch(`http://localhost:4000/api/auth/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Error al iniciar sesión");
+        alert(data.message || `Error al ${isLogin ? 'iniciar sesión' : 'registrarse'}`);
         setLoading(false);
         return;
       }
 
-      // Guardar token y rol
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.user.role);
+      if (isLogin) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.user.role);
 
-      // Redirigir según el rol
-      switch (data.user.role) {
-        case "client":
-          navigate("/client/home");
-          break;
-        case "host":
-          navigate("/host/dashboard");
-          break;
-        case "admin":
-          navigate("/admin/dashboard");
-          break;
-        default:
-          navigate("/");
+        switch (data.user.role) {
+          case "client":
+            navigate("/client/home");
+            break;
+          case "host":
+            navigate("/host/dashboard");
+            break;
+          case "admin":
+            navigate("/admin/dashboard");
+            break;
+          default:
+            navigate("/");
+        }
+      } else {
+        alert("Registro exitoso! Ahora puedes iniciar sesión.");
+        setIsLogin(true);
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
       }
     } catch (error) {
-      console.error("Error en login:", error);
+      console.error("Error:", error);
       alert("Error del servidor o conexión fallida");
     } finally {
       setLoading(false);
@@ -62,111 +83,182 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-surface-light dark:bg-surface-dark rounded-2xl shadow-lg overflow-hidden">
-        {/* Header */}
-        <div className="bg-primary p-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="text-white size-8">
-              <svg
-                fill="none"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
+    <div className="login-container">
+      <div className="login-wrapper">
+        {/* Imagen lateral */}
+        <div className="login-image">
+          <div className="image-content">
+            <img 
+              src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80" 
+              alt="TerrazaPerfecta - El lugar perfecto para tu evento"
+              className="side-image"
+            />
+            <div className="image-overlay">
+              <h2>TerrazaPerfecta</h2>
+              <p>Descubre el lugar ideal para tus eventos especiales</p>
             </div>
-            <h1 className="text-2xl font-bold text-white">TerrazaApp</h1>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Iniciar Sesión</h2>
-          <p className="text-white/80 text-sm">
-            El lugar perfecto para tu próximo evento
-          </p>
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Correo Electrónico
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.com"
-              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              required
-            />
-          </div>
-
-          {/* Contraseña */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Contraseña</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary pr-12"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+        <div className="login-card">
+          <div className="login-header">
+            <h1 className="login-title">TerrazaPerfecta</h1>
+            <p className="login-subtitle">El lugar perfecto para tu próximo evento</p>
+            
+            <div className="login-tabs">
+              <button 
+                className={`tab ${isLogin ? 'active' : ''}`}
+                onClick={() => setIsLogin(true)}
               >
-                <span className="material-symbols-outlined">
-                  {showPassword ? "visibility_off" : "visibility"}
-                </span>
+                Iniciar Sesión
+              </button>
+              <button 
+                className={`tab ${!isLogin ? 'active' : ''}`}
+                onClick={() => setIsLogin(false)}
+              >
+                Registrarse
               </button>
             </div>
           </div>
 
-          {/* Tipo de usuario */}
-          <div>
-            <label className="block text-sm font-medium mb-3">
-              Quiero iniciar sesión como:
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { value: "client", label: "Cliente", icon: "person" },
-                { value: "host", label: "Anfitrión", icon: "storefront" },
-                { value: "admin", label: "Administrador", icon: "admin_panel_settings" },
-              ].map((type) => (
-                <button
-                  key={type.value}
-                  type="button"
-                  onClick={() => setUserType(type.value)}
-                  className={`flex flex-col items-center p-3 border rounded-xl ${
-                    userType === type.value
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-300 hover:border-primary/50"
-                  }`}
-                >
-                  <span className="material-symbols-outlined mb-1">
-                    {type.icon}
-                  </span>
-                  <span className="text-xs font-medium">{type.label}</span>
-                </button>
-              ))}
+          <form onSubmit={handleSubmit} className="login-form">
+            {/* Email */}
+            <div className="form-group">
+              <label className="form-label">Correo Electrónico</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@correo.com"
+                className="form-input"
+                required
+              />
             </div>
-          </div>
 
-          {/* Botón submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-white py-3 px-4 rounded-xl font-semibold hover:opacity-90 transition-opacity"
-          >
-            {loading ? "Cargando..." : "Iniciar Sesión"}
-          </button>
-        </form>
+            {/* Contraseña */}
+            <div className="form-group">
+              <label className="form-label">Contraseña</label>
+              <div className="password-input-container">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="form-input password-input"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="password-toggle"
+                >
+                 <span>
+                      {showPassword ? <MdVisibility /> : <MdVisibilityOff />}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Confirmar Contraseña (solo en registro) */}
+            {!isLogin && (
+              <div className="form-group">
+                <label className="form-label">Confirmar Contraseña</label>
+                <div className="password-input-container">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="form-input password-input"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="password-toggle"
+                  >
+                    <span>
+                      {showPassword ? <MdVisibility /> : <MdVisibilityOff />}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Tipo de usuario (solo en registro) */}
+            {!isLogin && (
+              <div className="form-group">
+                <label className="form-label">Quiero registrarme como:</label>
+                <div className="user-type-grid">
+                  {[
+                    { value: "client", label: "Cliente", icon: "Usuario" },
+                    { value: "host", label: "Terrazas", icon: "Propietario" },
+                  ].map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setUserType(type.value)}
+                      className={`user-type-btn ${
+                        userType === type.value ? "active" : ""
+                      }`}
+                    >
+                      <span className="material-symbols-outlined user-type-icon">
+                        {type.icon}
+                      </span>
+                      <span className="user-type-label">{type.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Botón submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="submit-btn"
+            >
+              {loading ? "Cargando..." : (isLogin ? "Iniciar Sesión" : "Crear Cuenta")}
+            </button>
+
+            {/* Enlaces adicionales */}
+            <div className="form-links">
+              {isLogin ? (
+                <a href="#" className="forgot-password">¿Olvidaste tu contraseña?</a>
+              ) : (
+                <p className="terms-text">
+                  Al registrarte, aceptas nuestros <a href="#">Términos y Condiciones</a>
+                </p>
+              )}
+            </div>
+
+            {/* Separador */}
+            <div className="separator">
+              <span>o {isLogin ? 'inicia sesión' : 'regístrate'} con</span>
+            </div>
+
+            {/* Botones sociales */}
+            <div className="social-buttons">
+              <button
+                type="button"
+                onClick={() => handleSocialLogin("google")}
+                className="social-btn google-btn"
+              >
+                <span className="social-icon">G</span>
+                Google
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSocialLogin("facebook")}
+                className="social-btn facebook-btn"
+              >
+                <span className="social-icon">f</span>
+                Facebook
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
