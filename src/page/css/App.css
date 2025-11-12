@@ -1,0 +1,358 @@
+/* App.css - Estilos principales de la aplicación */
+
+/* Reset y base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.App {
+  min-height: 100vh;
+  background: #f8f9fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Layout principal */
+main {
+  min-height: calc(100vh - 70px);
+  padding: 0;
+}
+
+/* Contenedores generales */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.section {
+  padding: 2rem 0;
+}
+
+/* Placeholder del Host Dashboard */
+.host-dashboard-placeholder {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.host-dashboard-placeholder h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.host-dashboard-placeholder p {
+  color: #6c757d;
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.host-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.host-action-btn {
+  background: #62BEB2;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.host-action-btn:hover {
+  background: #4a9e94;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(98, 190, 178, 0.3);
+}
+
+/* Estados de carga */
+.loading-container {
+  text-align: center;
+  padding: 4rem;
+  background: white;
+  border-radius: 12px;
+  margin: 2rem auto;
+  max-width: 500px;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #62BEB2;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mensajes de error y éxito */
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border: 1px solid #f5c6cb;
+  text-align: center;
+}
+
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border: 1px solid #c3e6cb;
+  text-align: center;
+}
+
+/* Estados vacíos */
+.empty-state {
+  background: #f8f9fa;
+  padding: 3rem;
+  text-align: center;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+  margin: 2rem 0;
+}
+
+.empty-state h3 {
+  color: #6c757d;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.empty-state p {
+  color: #868e96;
+  margin-bottom: 1.5rem;
+}
+
+/* Botones generales */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: #62BEB2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #4a9e94;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Tarjetas */
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.card-footer {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+
+/* Formularios */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.form-input, .form-textarea, .form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+  color: #495057;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  outline: none;
+  border-color: #62BEB2;
+  box-shadow: 0 0 0 3px rgba(98, 190, 178, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-help {
+  display: block;
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* Grid system */
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Utilidades de texto */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: #62BEB2; }
+.text-secondary { color: #6c757d; }
+.text-success { color: #28a745; }
+.text-danger { color: #dc3545; }
+.text-warning { color: #ffc107; }
+.text-info { color: #17a2b8; }
+
+/* Utilidades de espaciado */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 0.5rem;
+  }
+  
+  .host-dashboard-placeholder {
+    padding: 2rem 1rem;
+    margin: 1rem;
+  }
+  
+  .host-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .host-action-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .card {
+    margin: 0 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .host-dashboard-placeholder h1 {
+    font-size: 2rem;
+  }
+  
+  .host-dashboard-placeholder p {
+    font-size: 1rem;
+  }
+  
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
