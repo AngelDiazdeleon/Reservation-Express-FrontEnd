@@ -663,6 +663,7 @@ body {
 
 .input-with-icon select {
   cursor: pointer;
+  background-color: #1a1919;
 }
 
 /* Results Section */

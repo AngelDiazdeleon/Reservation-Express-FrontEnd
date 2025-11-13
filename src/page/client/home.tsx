@@ -13,7 +13,7 @@ const TerrazaApp = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('todos');
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<{name: string} | null>(null);
   
   const userMenuRef = useRef(null);
 
@@ -69,18 +69,18 @@ const TerrazaApp = () => {
   };
 
   // Cerrar menú al hacer clic fuera
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setUserMenuOpen(false);
-      }
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (event) => {
+  //     if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+  //       setUserMenuOpen(false);
+  //     }
+  //   };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  //   document.addEventListener('mousedown', handleClickOutside);
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleClickOutside);
+  //   };
+  // }, []);
 
   // Datos de terrazas (mantenemos los mismos)
   const terrazas = [
@@ -145,7 +145,7 @@ const TerrazaApp = () => {
   };
 
   const categorias = [
-    { id: 'todos', nombre: 'Todas', icono: 'apps' },
+    { id: 'todos', nombre: 'Todas',  },
     { id: 'popular', nombre: 'Populares', icono: 'local_fire_department' },
     { id: 'lujo', nombre: 'Lujo', icono: 'diamond' },
     { id: 'moderno', nombre: 'Modernas', icono: 'architecture' },
@@ -339,7 +339,7 @@ const TerrazaApp = () => {
                 <div className="filter-field">
                   <label>Ubicación específica</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined">Ubicacion</span>
+                    <span className="material-symbols-outlined">📍</span>
                     <input
                       type="text"
                       placeholder="Ej: Roma, Polanco..."
