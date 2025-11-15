@@ -72,7 +72,7 @@ const BookingsPanel: React.FC = () => {
                 <td>El Mirador</td>
                 <td>2024-01-16</td>
                 <td>18:00 - 20:00</td>
-                <td>$200.00</td>
+                <td>$400.00</td>
                 <td><span className="status pending">Pendiente</span></td>
                 <td>
                   <button className="btn-icon" title="Confirmar">

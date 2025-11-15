@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import '../css/AdminPanels.css';
 
@@ -39,8 +40,20 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
+=======
+import React from "react";
+
+const clientProfile = () => {
+  return (
+    <div style={{ padding: "40px", fontSize: "24px" }}>
+      <h1>Hola, este es mi perfil client 😎</h1>
+>>>>>>> b5681df607d597697ca7b64dad7913990f1fbdc9
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default Profile;
+=======
+export default clientProfile;
+>>>>>>> b5681df607d597697ca7b64dad7913990f1fbdc9
