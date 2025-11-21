@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import "../css/clientcss/Miperfil.css";
 import api from "../../api";
 
-const ClientProfile = () => {
+const AdminProfile = () => {
   const [activeTab, setActiveTab] = useState('informacion');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -14,7 +14,7 @@ const ClientProfile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<{name: string} | null>(null);
+  const [user, setUser] = useState<{name: string} | null>(null); // ← IGUAL QUE EN HOME
 
   // Notificaciones de ejemplo
   const [notifications, setNotifications] = useState([
@@ -51,7 +51,7 @@ const ClientProfile = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
-  // Cargar datos del usuario al montar el componente
+  // Cargar datos del usuario al montar el componente - MISMOS QUE EN HOME
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
@@ -90,7 +90,7 @@ const ClientProfile = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Función para cerrar sesión
+  // Función para cerrar sesión - IGUAL QUE EN HOME
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -111,6 +111,7 @@ const ClientProfile = () => {
         email: user.email || '',
         phone: user.phone || ''
       });
+      // Actualizar localStorage
       localStorage.setItem('user', JSON.stringify(user));
     } catch (error) {
       console.error('Error al cargar el perfil:', error);
@@ -120,71 +121,67 @@ const ClientProfile = () => {
     }
   };
 
-  // Función para eliminar la cuenta
-  const handleDeleteAccount = async () => {
-    try {
-      if (!window.confirm('¿ESTÁS ABSOLUTAMENTE SEGURO? Esta acción eliminará permanentemente tu cuenta y todos tus datos. No podrás recuperarlos.')) {
-        return;
-      }
-
-      const response = await api.delete('/user/profile');
-      
-      alert('Tu cuenta ha sido eliminada correctamente');
-      
-      // Cerrar sesión y redirigir
-      handleLogout();
-      
-    } catch (error: any) {
-      console.error('Error al eliminar cuenta:', error);
-      alert('Error al eliminar la cuenta: ' + (error.response?.data?.message || 'Intenta nuevamente'));
-    }
-  };
-
   const handleEdit = () => {
     setIsEditing(!isEditing);
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      
-      const updateData = {
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone || ''
-      };
+ const handleSave = async () => {
+  try {
+    setSaving(true);
+    
+    const updateData = {
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone || ''
+    };
 
-      const response = await api.post('/user/profile', updateData, {
-        timeout: 15000
-      });
-      
-      setIsEditing(false);
-      alert('¡Perfil actualizado correctamente!');
-      
-      await fetchUserProfile();
-      
-    } catch (error: any) {
-      console.error('Error al guardar:', error);
-      
-      if (error.code === 'ECONNABORTED') {
-        alert('⏰ Timeout: El servidor no respondió en 15 segundos');
-      } else if (error.code === 'NETWORK_ERROR') {
-        alert('🌐 Error de red: No se pudo conectar al servidor');
-      } else if (error.response?.status === 409) {
-        alert('📧 El email ya está en uso por otro usuario');
-      } else if (error.response?.status === 401) {
-        alert('🔐 No autorizado - Token inválido o expirado');
-      } else if (error.response?.status === 400) {
-        alert('📝 Datos inválidos: ' + (error.response.data?.message || 'Verifica los campos'));
-      } else if (error.response) {
-        alert(`❌ Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`);
-      } else {
-        alert('🌐 Error de conexión: ' + (error.message || 'Verifica que el backend esté corriendo'));
-      }
-    } finally {
-      setSaving(false);
+    console.log('🔍 === INICIANDO ACTUALIZACIÓN ===');
+    console.log('📦 Datos:', updateData);
+    console.log('🔑 Token:', localStorage.getItem('token'));
+    console.log('🌐 BaseURL:', api.defaults.baseURL);
+    console.log('🎯 URL completa:', `${api.defaults.baseURL}/user/profile`);
+    console.log('🔗 BaseURL actual:', api.defaults.baseURL);
+    const response = await api.post('/user/profile', updateData, {
+      timeout: 15000
+    });
+    
+    console.log('✅ === ACTUALIZACIÓN EXITOSA ===');
+    console.log('📨 Respuesta:', response.data);
+    
+    setIsEditing(false);
+    alert('¡Perfil actualizado correctamente!');
+    
+    await fetchUserProfile();
+    
+  } catch (error: any) {
+    console.error('❌ === ERROR DETALLADO ===');
+    console.error('💥 Error completo:', error);
+    console.error('🔴 Código:', error.code);
+    console.error('📡 Mensaje:', error.message);
+    console.error('📊 Status:', error.response?.status);
+    console.error('📝 Data del error:', error.response?.data);
+    console.error('🧾 Headers:', error.response?.headers);
+    
+    // Verifica diferentes tipos de error
+    if (error.code === 'ECONNABORTED') {
+      alert('⏰ Timeout: El servidor no respondió en 15 segundos');
+    } else if (error.code === 'NETWORK_ERROR') {
+      alert('🌐 Error de red: No se pudo conectar al servidor');
+    } else if (error.response?.status === 409) {
+      alert('📧 El email ya está en uso por otro usuario');
+    } else if (error.response?.status === 401) {
+      alert('🔐 No autorizado - Token inválido o expirado');
+    } else if (error.response?.status === 400) {
+      alert('📝 Datos inválidos: ' + (error.response.data?.message || 'Verifica los campos'));
+    } else if (error.response) {
+      alert(`❌ Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`);
+    } else {
+      alert('🌐 Error de conexión: ' + (error.message || 'Verifica que el backend esté corriendo'));
     }
-  };
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -243,8 +240,9 @@ const ClientProfile = () => {
           
           <nav className="nav-section">
             <div className="nav-links">
-              <a className="nav-link" href="/client/home">Explorar</a>
-              <a className="nav-link" href="/client/MyReservation">Reservaciones</a>
+              <a className="nav-link" href="/client/home">Inicio</a>
+              <a className="nav-link" href="#reservaciones">Panel de comisiones</a>
+              <a className="nav-link" href="#reservaciones">Permisos</a>
             </div>
             
             <div className="user-section" ref={userMenuRef}>
@@ -293,6 +291,7 @@ const ClientProfile = () => {
                 )}
               </div>
               
+              {/* USAR 'user' EN LUGAR DE 'isAuthenticated' - IGUAL QUE EN HOME */}
               {user ? (
                 <div 
                   className="user-profile"
@@ -309,15 +308,7 @@ const ClientProfile = () => {
                         <span className="material-symbols-outlined"></span>
                         Mi Perfil
                       </a>
-                      <a 
-                        className="dropdown-item" 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveTab('configuracion');
-                          setUserMenuOpen(false);
-                        }}
-                      >
+                      <a className="dropdown-item" href="/configuracion">
                         <span className="material-symbols-outlined"></span>
                         Configuración
                       </a>
@@ -342,7 +333,7 @@ const ClientProfile = () => {
 
       <main className="profile-main">
         <div className="profile-container">
-          {/* Profile Header */}
+          {/* Profile Header - USAR 'user' EN LUGAR DE 'isAuthenticated' */}
           {user ? (
             <div className="profile-header">
               <div className="profile-info">
@@ -367,7 +358,7 @@ const ClientProfile = () => {
             </div>
           )}
 
-          {/* Tabs */}
+          {/* Tabs - SOLO SI HAY USUARIO */}
           {user && (
             <div className="profile-tabs">
               <button 
@@ -375,12 +366,6 @@ const ClientProfile = () => {
                 onClick={() => setActiveTab('informacion')}
               >
                 Información Personal
-              </button>
-              <button 
-                className={`tab ${activeTab === 'reservas' ? 'active' : ''}`}
-                onClick={() => setActiveTab('reservas')}
-              >
-                Mis Reservas
               </button>
               <button 
                 className={`tab ${activeTab === 'configuracion' ? 'active' : ''}`}
@@ -391,7 +376,7 @@ const ClientProfile = () => {
             </div>
           )}
 
-          {/* Content */}
+          {/* Content - SOLO SI HAY USUARIO */}
           {user && (
             <div className="profile-content">
               {activeTab === 'informacion' && (
@@ -434,7 +419,7 @@ const ClientProfile = () => {
                         onChange={handleInputChange}
                         disabled={!isEditing}
                         placeholder="Agrega tu número de teléfono"
-                        maxLength={10}
+                        maxLength={10}  // ← SOLO AGREGA ESTO
                       />
                     </div>
                   </div>
@@ -454,75 +439,12 @@ const ClientProfile = () => {
                 </div>
               )}
 
-              {activeTab === 'reservas' && (
-                <div className="reservations-section">
-                  <h2>Mis Reservas</h2>
-                  <div className="empty-state">
-                    <span className="material-symbols-outlined">Mis reservaciones</span>
-                    <p>No tienes reservas activas en este momento</p>
-                  </div>
-                </div>
-              )}
-
               {activeTab === 'configuracion' && (
                 <div className="settings-section">
                   <h2>Configuración</h2>
-                  
-                  <div className="settings-options">
-                    {/* Opción de Notificaciones */}
-                    <div className="setting-item">
-                      <div className="setting-info">
-                        <h3>Notificaciones</h3>
-                        <p>Gestiona tus preferencias de notificaciones</p>
-                      </div>
-                      <button className="setting-toggle">
-                        <span className="toggle-switch"></span>
-                      </button>
-                    </div>
-
-                    {/* Opción de Privacidad */}
-                    <div className="setting-item">
-                      <div className="setting-info">
-                        <h3>Privacidad</h3>
-                        <p>Controla quién puede ver tu información</p>
-                      </div>
-                      <button className="setting-btn">
-                        <span className="material-symbols-outlined"></span>
-                      </button>
-                    </div>
-
-                    {/* Opción de Seguridad */}
-                    <div className="setting-item">
-                      <div className="setting-info">
-                        <h3>Seguridad</h3>
-                        <p>Cambia tu contraseña y configura la autenticación</p>
-                      </div>
-                      <button className="setting-btn">
-                        <span className="material-symbols-outlined"></span>
-                      </button>
-                    </div>
-
-                    {/* Separador */}
-                    <div className="settings-divider"></div>
-
-                    {/* Opción Peligrosa - Eliminar Cuenta */}
-                    <div className="setting-item danger">
-                      <div className="setting-info">
-                        <h3>Eliminar Cuenta</h3>
-                        <p>Elimina permanentemente tu cuenta y todos tus datos</p>
-                      </div>
-                      <button 
-                        className="delete-account-btn"
-                        onClick={() => {
-                          if (window.confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) {
-                            handleDeleteAccount();
-                          }
-                        }}
-                      >
-                        <span className="material-symbols-outlined"></span>
-                        Eliminar
-                      </button>
-                    </div>
+                  <div className="empty-state">
+                    <span className="material-symbols-outlined">settings</span>
+                    <p>Configura tus preferencias y ajustes de cuenta</p>
                   </div>
                 </div>
               )}
@@ -534,4 +456,4 @@ const ClientProfile = () => {
   );
 };
 
-export default ClientProfile;
+export default AdminProfile;

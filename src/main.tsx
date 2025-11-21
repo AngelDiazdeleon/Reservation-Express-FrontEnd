@@ -13,8 +13,12 @@ import ClientHome from './page/client/home';
 import ClientProfile from './page/client/Profile';
 // ---------PAGINAS DE HOST--------------
 import HostDashboard from './page/host/Dashboard';
+import HostProfile from './page/host/profile';
+import DocumentVerification from './page/host/DocumentVerification';
 // ---------PAGINAS DE HOST--------------
 import AdminDashboard from './page/admin/Dashboard';
+import AdminProfile from './page/admin/Profile';
+
 // Rutas protegidas
 import ProtectedRoute from './routers/ProtectedRoute';
 
@@ -53,6 +57,23 @@ createRoot(document.getElementById('root')!).render(
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/host/profile"
+          element={
+            <ProtectedRoute allowedRoles={['host']}>
+              <HostProfile/>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/host/DocumentVerification"
+          element={
+            <ProtectedRoute allowedRoles={['host']}>
+              <DocumentVerification/>
+            </ProtectedRoute>
+          }
+        />
+       
 {/* -------------------------------------ADMINISTRADORES DE LA PWA-------------------------------------------------------------------------------------- */}
         {/* Admin */}
         <Route
@@ -63,6 +84,15 @@ createRoot(document.getElementById('root')!).render(
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/Profile"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminProfile/>
+            </ProtectedRoute>
+          }
+        />
+        
 
         {/* Si intenta entrar a una ruta que no existe */}
         <Route path="*" element={<Navigate to="/" replace />} />
