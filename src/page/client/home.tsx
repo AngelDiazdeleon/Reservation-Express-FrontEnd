@@ -274,8 +274,8 @@ const TerrazaApp = () => {
         <div className="header-container">
           <div className="logo-section">
             <div className="logo">
-              <span className="material-symbols-outlined">terrace</span>
-              <h1>TerrazaApp</h1>
+              <span className="material-symbols-outlined">Terraza</span>
+              <h1>Express</h1>
             </div>
           </div>
           
@@ -664,8 +664,8 @@ const TerrazaApp = () => {
           <div className="footer-content">
             <div className="footer-section">
               <div className="footer-logo">
-                <span className="material-symbols-outlined">terrace</span>
-                <h3>TerrazaApp</h3>
+                <span className="material-symbols-outlined">Terrazas</span>
+                <h3>Express</h3>
               </div>
               <p>La plataforma líder para encontrar y reservar terrazas para tus eventos especiales.</p>
             </div>

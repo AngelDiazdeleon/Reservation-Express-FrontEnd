@@ -15,9 +15,11 @@ import ClientProfile from './page/client/Profile';
 import HostDashboard from './page/host/Dashboard';
 import HostProfile from './page/host/profile';
 import DocumentVerification from './page/host/DocumentVerification';
-// ---------PAGINAS DE HOST--------------
+import MisTerrazas from './page/host/MyTerraces';
+// ---------PAGINAS DE ADMIN--------------
 import AdminDashboard from './page/admin/Dashboard';
 import AdminProfile from './page/admin/Profile';
+
 
 // Rutas protegidas
 import ProtectedRoute from './routers/ProtectedRoute';
@@ -34,7 +36,7 @@ createRoot(document.getElementById('root')!).render(
           path="/client/home"
           element={
             <ProtectedRoute allowedRoles={['client']}>
-              <ClientHome />
+              <ClientHome/>
             </ProtectedRoute>
           }
         />
@@ -70,6 +72,14 @@ createRoot(document.getElementById('root')!).render(
           element={
             <ProtectedRoute allowedRoles={['host']}>
               <DocumentVerification/>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/host/MyTerraces"
+          element={
+            <ProtectedRoute allowedRoles={['host']}>
+              <MisTerrazas/>
             </ProtectedRoute>
           }
         />

@@ -338,7 +338,7 @@ function TerraceAdmin() {
                     ? 'tr-bg-primary-10 tr-text-primary' 
                     : 'tr-hover-bg-primary-10 tr-hover-text-primary'
                 }`} 
-                href="#"
+                href="/host/MyTerraces"
                 onClick={() => setActiveMenu('terrazas')}
               >
                 <span className="material-symbols-outlined tr-text-lg">Mis Terrazas</span>
@@ -365,7 +365,7 @@ function TerraceAdmin() {
                 href="/host/DocumentVerification"
                 onClick={() => setActiveMenu('nueva-terraza')}
               >
-                <span className="material-symbols-outlined tr-text-lg">Subir nueva terraza</span>
+                <span className="material-symbols-outlined tr-text-lg">Subir Permisos</span>
                 <p className="tr-text-sm tr-font-medium"></p>
               </a>
             </nav>
@@ -400,7 +400,7 @@ function TerraceAdmin() {
                 <a href="/host/DocumentVerification">
                   <button  className="tr-flex tr-items-center tr-justify-center tr-rounded-lg tr-h-10 tr-px-4 tr-bg-primary tr-text-white tr-text-sm tr-font-bold tr-shadow-sm tr-hover-bg-primary-dark">
                     <span className="material-symbols-outlined tr-mr-2"></span>
-                    <span className="tr-truncate" >Subir nueva terraza</span>
+                    <span className="tr-truncate" >Subir permsisos</span>
                   </button>
                 </a>
               </div>
