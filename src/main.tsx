@@ -16,9 +16,12 @@ import HostDashboard from './page/host/Dashboard';
 import HostProfile from './page/host/profile';
 import DocumentVerification from './page/host/DocumentVerification';
 import MisTerrazas from './page/host/MyTerraces';
+import PublicarTerraza from './page/host/addTerrace';
+import MembershipPlans from './page/host/MembershipPlans';
 // ---------PAGINAS DE ADMIN--------------
-import AdminDashboard from './page/admin/Dashboard';
+// import AdminDashboard from './page/admin/Dashboard';
 import AdminProfile from './page/admin/Profile';
+import AdminPermission from './page/admin/PermissionPanel';
 
 
 // Rutas protegidas
@@ -83,22 +86,46 @@ createRoot(document.getElementById('root')!).render(
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/host/addTerraces"
+          element={
+            <ProtectedRoute allowedRoles={['host']}>
+              <PublicarTerraza/>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/host/MembershipPlans"
+          element={
+            <ProtectedRoute allowedRoles={['host']}>
+              <MembershipPlans/>
+            </ProtectedRoute>
+          }
+        />
        
 {/* -------------------------------------ADMINISTRADORES DE LA PWA-------------------------------------------------------------------------------------- */}
         {/* Admin */}
-        <Route
+        {/* <Route
           path="/admin/dashboard"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/admin/Profile"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminProfile/>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/PermissionPanel"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminPermission/>
             </ProtectedRoute>
           }
         />

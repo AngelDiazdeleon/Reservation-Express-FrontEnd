@@ -25,6 +25,36 @@ interface UserData {
   memberSince: string;
 }
 
+// Interface para las terrazas reales desde la API
+interface Terraza {
+  _id: string;
+  terraceData: {
+    name: string;
+    description: string;
+    capacity: number;
+    location: string;
+    price: number;
+    contactPhone: string;
+    contactEmail: string;
+    amenities: string[];
+    rules: string;
+  };
+  photos: Array<{
+    fileId: string;
+    filename: string;
+    filePath: string;
+    originalName: string;
+    mimetype: string;
+    fileType: string;
+    size: number;
+  }>;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  adminNotes?: string;
+}
+
 function TerraceAdmin() {
   // Estados para el header
   const [user, setUser] = useState<User | null>(null);
@@ -57,11 +87,15 @@ function TerraceAdmin() {
     }
   ]);
 
+  // Estado para las terrazas reales
+  const [terrazas, setTerrazas] = useState<Terraza[]>([]);
+  const [loadingTerrazas, setLoadingTerrazas] = useState(true);
+
   // Refs para manejar clicks fuera del dropdown
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Cargar datos del usuario al montar el componente
+  // Cargar datos del usuario y terrazas al montar el componente
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -80,14 +114,43 @@ function TerraceAdmin() {
           }) : 'Jan 2023'
         });
         setLoading(false);
+        
+        // Cargar terrazas del usuario
+        loadUserTerrazas();
       } catch (error) {
         console.error('Error parsing user data:', error);
         handleLogout();
       }
     } else {
       setLoading(false);
+      setLoadingTerrazas(false);
     }
   }, []);
+
+  // Función para cargar las terrazas del usuario desde la API
+  const loadUserTerrazas = async () => {
+    try {
+      setLoadingTerrazas(true);
+      console.log('📡 Cargando terrazas del usuario para dashboard...');
+      
+      const response = await api.get('/publication-requests/my/requests');
+      
+      if (response.data.success) {
+        console.log('✅ Terrazas cargadas en dashboard:', response.data.data);
+        setTerrazas(response.data.data);
+      } else {
+        console.error('❌ Error cargando terrazas:', response.data.message);
+      }
+    } catch (error: any) {
+      console.error('💥 Error al cargar terrazas:', error);
+      
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
+    } finally {
+      setLoadingTerrazas(false);
+    }
+  };
 
   // Función para obtener el perfil completo del usuario
   const fetchUserProfile = async () => {
@@ -167,27 +230,65 @@ function TerraceAdmin() {
     window.location.href = '/login';
   };
 
-  // Datos de las terrazas
-  const terraces = [
+  // Obtener URL de la imagen (usando la primera foto)
+  const getTerrazaImage = (terraza: Terraza) => {
+    if (terraza.photos && terraza.photos.length > 0) {
+      const primeraFoto = terraza.photos[0];
+      const fileName = primeraFoto.filename;
+      if (fileName) {
+        return `http://localhost:4000/api/terrace-images/${fileName}`;
+      }
+    }
+    
+    // Imagen por defecto si no hay fotos
+    return "https://images.unsplash.com/photo-1549294413-26f195200c16?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+  };
+
+  // Cálculos para las estadísticas del dashboard basadas en datos reales
+  const totalTerraces = terrazas.length;
+  const publishedTerraces = terrazas.filter(terraza => terraza.status === 'approved').length;
+  const pendingTerraces = terrazas.filter(terraza => terraza.status === 'pending').length;
+  const rejectedTerraces = terrazas.filter(terraza => terraza.status === 'rejected').length;
+
+  // Calcular ganancias estimadas (basado en terrazas aprobadas y precio)
+  const estimatedEarnings = terrazas
+    .filter(terraza => terraza.status === 'approved')
+    .reduce((sum, terraza) => sum + (terraza.terraceData.price * 10), 0); // Estimación: precio * 10 reservas
+
+  // Datos para las tarjetas de estadísticas - ahora con datos reales
+  const statsData = [
     {
-      name: 'The Urban Oasis',
-      status: 'Published',
-      bookings: 5,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuASL7_lRuNorZXL6LKizsqhh_99DVjHwGqvSO31EQXJz7EEXlyPur56Nn-zkWcWTnanrx9DnKKhse2CnpJdx6Q0_8KjakAc8f7uEr6S56Z1NviJP4QVhUMg3QHnnw7ttDbNW6cIkoydsYEb22h95B2trkyAOXGnvNP69QanSuHFSfTo7pMNsrOaEuaDHO9brF_dCUvnG4TUhyJm7IBTR4ntJ-5rHJ5fsgCM2bs6TwZmGEtzcKkW0GmD5Icacvdw7xvVxaBtBKEfMuE'
+      title: 'Terrazas Listadas',
+      value: totalTerraces.toString(),
+      change: pendingTerraces > 0 ? `+${pendingTerraces} en revisión` : 'Todas procesadas',
+      icon: 'terrace',
+      color: 'primary'
     },
     {
-      name: 'Skyline View Rooftop',
-      status: 'Published',
-      bookings: 12,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJSQKShpfzC3kbAJk1GOdO_YlX6B9m_dltD3VeWfcmWgmfCCRLm9QtjQJ9TgRlN1e-HNqY8lZozH6kKl1F3HqJV_OOqL8LFyqbgSIhnfnQ4FxovhoXS5zkDRxAcbcE98_E3FoqfWJMdAmRc2sxMx0zDR0hftsVukr7uOtu8UvnjxVQHSp_DCjfgTDVZB9JkfbuLH3G4CtXoVgYW15NTjYSmo86phDLh0iGWd9yX5ovtOdbkWzfLUEVuxRYeH-Vf_e7sXtMKWE0BL4'
+      title: 'Terrazas Publicadas',
+      value: publishedTerraces.toString(),
+      change: publishedTerraces > 0 ? 'Activas' : 'Sin publicar',
+      icon: 'check_circle',
+      color: 'secondary'
     },
     {
-      name: 'Garden Getaway',
-      status: 'Draft',
-      bookings: 0,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCcM8Hsv9VR0LFhoGLokNnfgVcnK8VyVGapU3eVqKjTusKZnKBs2-Nv5fMoxzoMFbsK3mXx9Jexb7Rsahk7-xemoPCMHy92bjbeEOyaFM2CZfxBRybvaLpzj0r00C3629TWhijqE3I6m7Wxc-Ih80BdieWCg-YIcYMM23vYEKmnQCvIBZuetw4Rh3HNc14FddcX-SNMHRPCt59cLjQbW5i-7Jf-9DsL91uKpahnt2M5jnNVEjhJBEPIrBHB9udqJHK1YfiEBJY6fWc'
+      title: 'Solicitudes Pendientes',
+      value: pendingTerraces.toString(),
+      change: pendingTerraces > 0 ? 'En revisión' : 'Sin pendientes',
+      icon: 'pending',
+      color: 'accent'
+    },
+    {
+      title: 'Ganancias Estimadas',
+      value: `$${estimatedEarnings.toLocaleString()}`,
+      change: '+15.2% este mes',
+      icon: 'payments',
+      color: 'secondary'
     }
   ];
+
+  // Obtener las terrazas aprobadas para mostrar en la tabla
+  const approvedTerrazas = terrazas.filter(terraza => terraza.status === 'approved');
 
   if (loading) {
     return (
@@ -217,7 +318,7 @@ function TerraceAdmin() {
                   className="icon-btn notification-btn"
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                 >
-                  <span className="material-symbols-outlined">🔔</span>
+                  <span className="material-symbols-outlined">notifications</span>
                   {unreadNotifications > 0 && (
                     <span className="notification-badge">{unreadNotifications}</span>
                   )}
@@ -329,8 +430,8 @@ function TerraceAdmin() {
                 href="#"
                 onClick={() => setActiveMenu('inicio')}
               >
-                <span className="material-symbols-outlined tr-text-lg">Inicio</span>
-                <p className="tr-text-sm tr-font-medium"></p>
+                <span className="material-symbols-outlined tr-text-lg"></span>
+                <p className="tr-text-sm tr-font-medium">Inicio</p>
               </a>
               <a 
                 className={`tr-flex tr-items-center tr-gap-3 tr-px-3 tr-py-2 tr-rounded-lg ${
@@ -341,8 +442,8 @@ function TerraceAdmin() {
                 href="/host/MyTerraces"
                 onClick={() => setActiveMenu('terrazas')}
               >
-                <span className="material-symbols-outlined tr-text-lg">Mis Terrazas</span>
-                <p className="tr-text-sm tr-font-medium"></p>
+                <span className="material-symbols-outlined tr-text-lg"></span>
+                <p className="tr-text-sm tr-font-medium">Mis Terrazas</p>
               </a>
               <a 
                 className={`tr-flex tr-items-center tr-gap-3 tr-px-3 tr-py-2 tr-rounded-lg ${
@@ -353,8 +454,8 @@ function TerraceAdmin() {
                 href="#"
                 onClick={() => setActiveMenu('reservaciones')}
               >
-                <span className="material-symbols-outlined tr-text-lg">Reservaciones</span>
-                <p className="tr-text-sm tr-font-medium"></p>
+                <span className="material-symbols-outlined tr-text-lg"></span>
+                <p className="tr-text-sm tr-font-medium">Reservaciones</p>
               </a>
               <a 
                 className={`tr-flex tr-items-center tr-gap-3 tr-px-3 tr-py-2 tr-rounded-lg ${
@@ -365,8 +466,8 @@ function TerraceAdmin() {
                 href="/host/DocumentVerification"
                 onClick={() => setActiveMenu('nueva-terraza')}
               >
-                <span className="material-symbols-outlined tr-text-lg">Subir Permisos</span>
-                <p className="tr-text-sm tr-font-medium"></p>
+                <span className="material-symbols-outlined tr-text-lg"></span>
+                <p className="tr-text-sm tr-font-medium">Subir Permisos</p>
               </a>
             </nav>
           </div>
@@ -374,10 +475,10 @@ function TerraceAdmin() {
           {/* Sección inferior del menú */}
           <div className="tr-flex tr-flex-col tr-gap-1">
             <a 
-              className="tr-flex tr-items-center tr-gap-3 tr-px-3 tr-py-2 tr-rounded-lg tr-hover-bg-primary-10 tr-hover-text-primary" 
+              className="tr-flex tr-items-center tr-gap-3 tr-px-3 tr-py-2 tr-rounded-lg tr-hover-bg-primary-10 tr-hover-text-primary tr-cursor-pointer" 
               onClick={handleLogout}
             >
-              <span className="material-symbols-outlined tr-text-lg">logout</span>
+              <span className="material-symbols-outlined tr-text-lg"></span>
               <p className="tr-text-sm tr-font-medium">Cerrar Sesión</p>
             </a>
           </div>
@@ -398,9 +499,9 @@ function TerraceAdmin() {
                   </p>
                 </div>
                 <a href="/host/DocumentVerification">
-                  <button  className="tr-flex tr-items-center tr-justify-center tr-rounded-lg tr-h-10 tr-px-4 tr-bg-primary tr-text-white tr-text-sm tr-font-bold tr-shadow-sm tr-hover-bg-primary-dark">
+                  <button className="tr-flex tr-items-center tr-justify-center tr-rounded-lg tr-h-10 tr-px-4 tr-bg-primary tr-text-white tr-text-sm tr-font-bold tr-shadow-sm tr-hover-bg-primary-dark">
                     <span className="material-symbols-outlined tr-mr-2"></span>
-                    <span className="tr-truncate" >Subir permsisos</span>
+                    <span className="tr-truncate">Subir permisos</span>
                   </button>
                 </a>
               </div>
@@ -429,126 +530,167 @@ function TerraceAdmin() {
                 
                 <div className="tr-bg-card-light tr-p-6 tr-rounded-xl tr-border tr-border-border-light tr-flex tr-flex-col tr-justify-center">
                   <div className="tr-flex tr-items-center tr-gap-2">
-                    <span className="material-symbols-outlined tr-text-secondary">⭐</span>
+                    <span className="material-symbols-outlined tr-text-secondary">star</span>
                     <p className="tr-font-bold tr-text-lg">Miembro Pro</p>
                   </div>
                   <p className="tr-text-text-muted-light tr-text-sm tr-mt-1">
                     Renueva el: 31 Dic, 2024
                   </p>
-                  <button className="tr-mt-4 tr-w-full tr-flex tr-items-center tr-justify-center tr-rounded-lg tr-h-9 tr-px-4 tr-bg-primary-10 tr-text-primary tr-text-sm tr-font-bold tr-hover-bg-primary-20">
-                    <span className="material-symbols-outlined tr-mr-2">Gestionar Suscripción</span>
-                    
-                  </button>
+                  <a href="/host/MembershipPlans">
+                    <button className="tr-mt-4 tr-w-full tr-flex tr-items-center tr-justify-center tr-rounded-lg tr-h-9 tr-px-4 tr-bg-primary-10 tr-text-primary tr-text-sm tr-font-bold tr-hover-bg-primary-20">
+                      <span className="material-symbols-outlined tr-mr-2"></span>
+                      Gestionar Suscripción
+                    </button>
+                  </a>
                 </div>
               </div>
 
-              {/* Stats */}
+              {/* Stats - Ahora con datos reales */}
               <div className="tr-grid tr-grid-cols-1 tr-sm-grid-cols-2 tr-lg-grid-cols-4 tr-gap-6">
-                <div className="tr-flex tr-flex-col tr-gap-2 tr-rounded-xl tr-p-6 tr-border tr-border-border-light tr-bg-card-light">
-                  <div className="tr-flex tr-items-center tr-gap-2">
-                    <span className="material-symbols-outlined tr-text-primary"></span>
-                    <p className="tr-text-base tr-font-medium tr-text-text-muted-light">Terrazas Listadas</p>
+                {statsData.map((stat, index) => (
+                  <div key={index} className="tr-flex tr-flex-col tr-gap-2 tr-rounded-xl tr-p-6 tr-border tr-border-border-light tr-bg-card-light">
+                    <div className="tr-flex tr-items-center tr-gap-2">
+                      <span className={`material-symbols-outlined tr-text-${stat.color}`}>
+                        {stat.icon}
+                      </span>
+                      <p className="tr-text-base tr-font-medium tr-text-text-muted-light">{stat.title}</p>
+                    </div>
+                    <p className="tr-tracking-tight tr-text-3xl tr-font-bold">{stat.value}</p>
+                    <p className={`tr-text-${stat.color} tr-text-sm tr-font-medium tr-flex tr-items-center`}>
+                      <span className="material-symbols-outlined tr-text-base"></span>
+                      {stat.change}
+                    </p>
                   </div>
-                  <p className="tr-tracking-tight tr-text-3xl tr-font-bold">8</p>
-                  <p className="tr-text-secondary tr-text-sm tr-font-medium tr-flex tr-items-center">
-                    <span className="material-symbols-outlined tr-text-base"></span>
-                    +1 este mes
-                  </p>
-                </div>
-                
-                <div className="tr-flex tr-flex-col tr-gap-2 tr-rounded-xl tr-p-6 tr-border tr-border-border-light tr-bg-card-light">
-                  <div className="tr-flex tr-items-center tr-gap-2">
-                    <span className="material-symbols-outlined tr-text-primary"></span>
-                    <p className="tr-text-base tr-font-medium tr-text-text-muted-light">Reservas Activas</p>
-                  </div>
-                  <p className="tr-tracking-tight tr-text-3xl tr-font-bold">12</p>
-                  <p className="tr-text-secondary tr-text-sm tr-font-medium tr-flex tr-items-center">
-                    <span className="material-symbols-outlined tr-text-base">arrow_upward</span>
-                    +2 esta semana
-                  </p>
-                </div>
-                
-                <div className="tr-flex tr-flex-col tr-gap-2 tr-rounded-xl tr-p-6 tr-border tr-border-border-light tr-bg-card-light">
-                  <div className="tr-flex tr-items-center tr-gap-2">
-                    <span className="material-symbols-outlined tr-text-primary"></span>
-                    <p className="tr-text-base tr-font-medium tr-text-text-muted-light">Solicitudes Pendientes</p>
-                  </div>
-                  <p className="tr-tracking-tight tr-text-3xl tr-font-bold">3</p>
-                  <p className="tr-text-accent tr-text-sm tr-font-medium tr-flex tr-items-center">
-                    <span className="material-symbols-outlined tr-text-base">arrow_upward</span>
-                    +3 hoy
-                  </p>
-                </div>
-                
-                <div className="tr-flex tr-flex-col tr-gap-2 tr-rounded-xl tr-p-6 tr-border tr-border-border-light tr-bg-card-light">
-                  <div className="tr-flex tr-items-center tr-gap-2">
-                    <span className="material-symbols-outlined tr-text-primary"></span>
-                    <p className="tr-text-base tr-font-medium tr-text-text-muted-light">Ganancias (Este Mes)</p>
-                  </div>
-                  <p className="tr-tracking-tight tr-text-3xl tr-font-bold">$4,500</p>
-                  <p className="tr-text-secondary tr-text-sm tr-font-medium tr-flex tr-items-center">
-                    <span className="material-symbols-outlined tr-text-base">arrow_upward</span>
-                    +15.2%
-                  </p>
-                </div>
+                ))}
               </div>
 
-              {/* My Terraces List */}
+              {/* My Terraces List - Ahora con datos reales */}
               <div>
-                <h2 className="tr-text-xl tr-font-bold tr-leading-tight tr-tracking-tight tr-mb-4">
-                  Mis Terrazas
-                </h2>
-                <div className="tr-bg-card-light tr-rounded-xl tr-border tr-border-border-light tr-overflow-hidden">
-                  <div className="tr-overflow-x-auto">
-                    <table className="tr-w-full tr-text-sm tr-text-left">
-                      <thead className="tr-bg-background-light tr-text-xs tr-uppercase tr-text-text-muted-light">
-                        <tr>
-                          <th className="tr-px-6 tr-py-3" scope="col">Nombre de la Terraza</th>
-                          <th className="tr-px-6 tr-py-3" scope="col">Estado</th>
-                          <th className="tr-px-6 tr-py-3" scope="col">Reservas</th>
-                          <th className="tr-px-6 tr-py-3" scope="col"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {terraces.map((terrace, index) => (
-                          <tr key={index} className="tr-border-b tr-border-border-light tr-hover-bg-background-light">
-                            <td className="tr-px-6 tr-py-4 tr-font-medium">
-                              <div className="tr-flex tr-items-center tr-gap-4">
-                                <div 
-                                  className="tr-bg-center tr-bg-no-repeat tr-aspect-video tr-bg-cover tr-rounded tr-w-20 tr-h-12" 
-                                  style={{backgroundImage: `url("${terrace.image}")`}}
-                                ></div>
-                                <span>{terrace.name}</span>
-                              </div>
-                            </td>
-                            <td className="tr-px-6 tr-py-4">
-                              <span className={`tr-inline-flex tr-items-center tr-px-2.5 tr-py-0.5 tr-rounded-full tr-text-xs tr-font-medium ${
-                                terrace.status === 'Published' 
-                                  ? 'tr-bg-secondary-10 tr-text-secondary' 
-                                  : 'tr-bg-accent-20 tr-text-accent'
-                              }`}>
-                                {terrace.status === 'Published' ? 'Publicada' : 'Borrador'}
-                              </span>
-                            </td>
-                            <td className="tr-px-6 tr-py-4 tr-font-medium">
-                              <div className="tr-flex tr-items-center tr-gap-2">
-                                <span className="material-symbols-outlined tr-text-sm">book_online</span>
-                                {terrace.bookings}
-                              </div>
-                            </td>
-                            <td className="tr-px-6 tr-py-4 tr-text-right">
-                              <button className="tr-font-medium tr-text-primary tr-hover-underline tr-flex tr-items-center tr-gap-1">
-                                <span className="material-symbols-outlined tr-text-base">settings</span>
-                                Gestionar
-                              </button>
-                            </td>
+                <div className="tr-flex tr-justify-between tr-items-center tr-mb-4">
+                  <h2 className="tr-text-xl tr-font-bold tr-leading-tight tr-tracking-tight">
+                    Mis Terrazas Publicadas ({publishedTerraces})
+                  </h2>
+                  {pendingTerraces > 0 && (
+                    <div className="tr-text-accent tr-text-sm tr-font-medium">
+                      {pendingTerraces} terraza(s) en revisión
+                    </div>
+                  )}
+                </div>
+                
+                {loadingTerrazas ? (
+                  <div className="tr-bg-card-light tr-rounded-xl tr-border tr-border-border-light tr-p-8 tr-text-center">
+                    <div className="tr-text-lg">Cargando terrazas...</div>
+                  </div>
+                ) : approvedTerrazas.length > 0 ? (
+                  <div className="tr-bg-card-light tr-rounded-xl tr-border tr-border-border-light tr-overflow-hidden">
+                    <div className="tr-overflow-x-auto">
+                      <table className="tr-w-full tr-text-sm tr-text-left">
+                        <thead className="tr-bg-background-light tr-text-xs tr-uppercase tr-text-text-muted-light">
+                          <tr>
+                            <th className="tr-px-6 tr-py-3" scope="col">Nombre de la Terraza</th>
+                            <th className="tr-px-6 tr-py-3" scope="col">Ubicación</th>
+                            <th className="tr-px-6 tr-py-3" scope="col">Capacidad</th>
+                            <th className="tr-px-6 tr-py-3" scope="col">Precio</th>
+                            <th className="tr-px-6 tr-py-3" scope="col"></th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {approvedTerrazas.map((terraza) => (
+                            <tr key={terraza._id} className="tr-border-b tr-border-border-light tr-hover-bg-background-light">
+                              <td className="tr-px-6 tr-py-4 tr-font-medium">
+                                <div className="tr-flex tr-items-center tr-gap-4">
+                                  <div 
+                                    className="tr-bg-center tr-bg-no-repeat tr-aspect-video tr-bg-cover tr-rounded tr-w-20 tr-h-12" 
+                                    style={{backgroundImage: `url("${getTerrazaImage(terraza)}")`}}
+                                  ></div>
+                                  <div>
+                                    <span>{terraza.terraceData.name}</span>
+                                    <div className="tr-text-text-muted-light tr-text-xs">
+                                      {terraza.terraceData.amenities.slice(0, 2).join(', ')}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="tr-px-6 tr-py-4">
+                                <span className="tr-text-text-muted-light">
+                                  {terraza.terraceData.location}
+                                </span>
+                              </td>
+                              <td className="tr-px-6 tr-py-4 tr-font-medium">
+                                <div className="tr-flex tr-items-center tr-gap-2">
+                                  <span className="material-symbols-outlined tr-text-sm"></span>
+                                  {terraza.terraceData.capacity} personas
+                                </div>
+                              </td>
+                              <td className="tr-px-6 tr-py-4 tr-font-medium">
+                                <div className="tr-flex tr-items-center tr-gap-2">
+                                  <span className="material-symbols-outlined tr-text-sm"></span>
+                                  ${terraza.terraceData.price}/hora
+                                </div>
+                              </td>
+                              <td className="tr-px-6 tr-py-4 tr-text-right">
+                                <button 
+                                  className="tr-font-medium tr-text-primary tr-hover-underline tr-flex tr-items-center tr-gap-1"
+                                  onClick={() => window.location.href = '/host/MyTerraces'}
+                                >
+                                  <span className="material-symbols-outlined tr-text-base"></span>
+                                  Gestionar
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="tr-bg-card-light tr-rounded-xl tr-border tr-border-border-light tr-p-8 tr-text-center">
+                    <div className="tr-flex tr-flex-col tr-items-center tr-gap-4">
+                      <span className="material-symbols-outlined tr-text-4xl tr-text-text-muted-light"></span>
+                      <h3 className="tr-text-lg tr-font-medium">No tienes terrazas publicadas</h3>
+                      <p className="tr-text-text-muted-light">
+                        {terrazas.length > 0 
+                          ? 'Tus terrazas están en proceso de revisión' 
+                          : 'Comienza subiendo tu primera terraza'
+                        }
+                      </p>
+                      <a href="/host/DocumentVerification">
+                        <button className="tr-flex tr-items-center tr-justify-center tr-rounded-lg tr-h-10 tr-px-4 tr-bg-primary tr-text-white tr-text-sm tr-font-bold tr-shadow-sm tr-hover-bg-primary-dark tr-mt-4">
+                          <span className="material-symbols-outlined tr-mr-2"></span>
+                          {terrazas.length > 0 ? 'Ver mis terrazas' : 'Subir primera terraza'}
+                        </button>
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Resumen de Estado de Terrazas */}
+              {terrazas.length > 0 && (
+                <div className="tr-bg-card-light tr-rounded-xl tr-border tr-border-border-light tr-p-6">
+                  <h3 className="tr-text-lg tr-font-bold tr-mb-4">Resumen de Estado</h3>
+                  <div className="tr-grid tr-grid-cols-1 tr-md-grid-cols-3 tr-gap-4">
+                    <div className="tr-flex tr-items-center tr-gap-3">
+                      <div className="tr-w-3 tr-h-3 tr-bg-secondary tr-rounded-full"></div>
+                      <span className="tr-text-sm">
+                        <strong>{publishedTerraces}</strong> Publicadas
+                      </span>
+                    </div>
+                    <div className="tr-flex tr-items-center tr-gap-3">
+                      <div className="tr-w-3 tr-h-3 tr-bg-accent tr-rounded-full"></div>
+                      <span className="tr-text-sm">
+                        <strong>{pendingTerraces}</strong> En revisión
+                      </span>
+                    </div>
+                    <div className="tr-flex tr-items-center tr-gap-3">
+                      <div className="tr-w-3 tr-h-3 tr-bg-gray-400 tr-rounded-full"></div>
+                      <span className="tr-text-sm">
+                        <strong>{rejectedTerraces}</strong> Rechazadas
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </main>
         </div>

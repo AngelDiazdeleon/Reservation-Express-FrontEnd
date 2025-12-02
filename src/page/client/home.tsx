@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import "../css/clientcss/home.css";
 
 const TerrazaApp = () => {
@@ -14,10 +13,12 @@ const TerrazaApp = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('todos');
-  const [user, setUser] = useState<{name: string} | null>(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [terrazas, setTerrazas] = useState([]);
   
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const notificationsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef(null);
+  const notificationsRef = useRef(null);
 
   // Notificaciones de ejemplo
   const [notifications, setNotifications] = useState([
@@ -51,8 +52,46 @@ const TerrazaApp = () => {
     }
   ]);
 
-  // Obtener información del usuario al cargar el componente
+  // Cargar terrazas y usuario al iniciar
   useEffect(() => {
+    loadAllTerrazas();
+    loadUserData();
+  }, []);
+
+  // Función para cargar todas las terrazas aprobadas desde la API
+  const loadAllTerrazas = async () => {
+    try {
+      setLoading(true);
+      console.log('📡 Cargando terrazas aprobadas...');
+      
+      const response = await fetch('http://localhost:4000/api/publication-requests/public/approved', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Terrazas cargadas:', data.data);
+        setTerrazas(data.data);
+      } else {
+        console.error('❌ Error cargando terrazas:', data.message);
+        // Usar datos de ejemplo si la API falla
+        setTerrazas(getTerrazasEjemplo());
+      }
+    } catch (error) {
+      console.error('💥 Error al cargar terrazas:', error);
+      // Usar datos de ejemplo si hay error de conexión
+      setTerrazas(getTerrazasEjemplo());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para cargar datos del usuario
+  const loadUserData = () => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
@@ -64,15 +103,52 @@ const TerrazaApp = () => {
         handleLogout();
       }
     }
-  }, []);
+  };
+
+  // Datos de ejemplo por si falla la API
+  const getTerrazasEjemplo = () => [
+    {
+      id: '1',
+      nombre: "Terraza del Sol",
+      ubicacion: "Colonia Roma Norte, CDMX",
+      precio: 5000,
+      calificacion: 4.8,
+      capacidad: 50,
+      imagen: "https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=600&h=400&fit=crop",
+      categoria: "popular",
+      descripcion: "Amplia terraza con vista panorámica al atardecer"
+    },
+    {
+      id: '2',
+      nombre: "Jardín Secreto",
+      ubicacion: "Polanco, CDMX",
+      precio: 8000,
+      calificacion: 4.9,
+      capacidad: 30,
+      imagen: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=600&h=400&fit=crop",
+      categoria: "lujo",
+      descripcion: "Elegante terraza con jardín privado y fuentes"
+    },
+    {
+      id: '3',
+      nombre: "Rooftop Panorámico",
+      ubicacion: "Condesa, CDMX",
+      precio: 6500,
+      calificacion: 4.7,
+      capacidad: 40,
+      imagen: "https://images.unsplash.com/photo-1564013797767-2f7b0eb10aac?w=600&h=400&fit=crop",
+      categoria: "moderno",
+      descripcion: "Terraza moderna con vista espectacular de la ciudad"
+    }
+  ];
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setNotificationsOpen(false);
       }
     };
@@ -88,39 +164,11 @@ const TerrazaApp = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    // Redirigir al login o página principal
     window.location.href = '/login';
   };
 
-  // Función para obtener el perfil del usuario
-  const fetchUserProfile = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:3000/api/auth/me', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      } else {
-        // Si hay error de autenticación, cerrar sesión
-        handleLogout();
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
-
   // Funciones para manejar notificaciones
-  const markNotificationAsRead = (id: number) => {
+  const markNotificationAsRead = (id) => {
     setNotifications(notifications.map(notif => 
       notif.id === id ? { ...notif, read: true } : notif
     ));
@@ -130,7 +178,7 @@ const TerrazaApp = () => {
     setNotifications(notifications.map(notif => ({ ...notif, read: true })));
   };
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type) => {
     switch (type) {
       case 'reserva': return 'event_available';
       case 'mensaje': return 'message';
@@ -141,76 +189,6 @@ const TerrazaApp = () => {
   };
 
   const unreadNotifications = notifications.filter(notif => !notif.read).length;
-
-  // Datos de terrazas
-  const terrazas = [
-    {
-      id: 1,
-      nombre: "Terraza del Sol",
-      ubicacion: "Colonia Roma Norte, CDMX",
-      precio: 5000,
-      calificacion: 4.8,
-      capacidad: 50,
-      imagen: "https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=600&h=400&fit=crop",
-      categoria: "popular",
-      descripcion: "Amplia terraza con vista panorámica al atardecer"
-    },
-    {
-      id: 2,
-      nombre: "Jardín Secreto",
-      ubicacion: "Polanco, CDMX",
-      precio: 8000,
-      calificacion: 4.9,
-      capacidad: 30,
-      imagen: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=600&h=400&fit=crop",
-      categoria: "lujo",
-      descripcion: "Elegante terraza con jardín privado y fuentes"
-    },
-    {
-      id: 3,
-      nombre: "Rooftop Panorámico",
-      ubicacion: "Condesa, CDMX",
-      precio: 6500,
-      calificacion: 4.7,
-      capacidad: 40,
-      imagen: "https://images.unsplash.com/photo-1564013797767-2f7b0eb10aac?w=600&h=400&fit=crop",
-      categoria: "moderno",
-      descripcion: "Terraza moderna con vista espectacular de la ciudad"
-    },
-    {
-      id: 4,
-      nombre: "Terraza Bohemia",
-      ubicacion: "Coyoacán, CDMX",
-      precio: 3500,
-      calificacion: 4.6,
-      capacidad: 25,
-      imagen: "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=600&h=400&fit=crop",
-      categoria: "bohemio",
-      descripcion: "Ambiente bohemio con decoración artesanal y luces tenues"
-    },
-    {
-      id: 5,
-      nombre: "Patio Rustico",
-      ubicacion: "San Ángel, CDMX",
-      precio: 4200,
-      calificacion: 4.5,
-      capacidad: 35,
-      imagen: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&h=400&fit=crop",
-      categoria: "rustico",
-      descripcion: "Encantador patio rústico con paredes de piedra y madera"
-    },
-    {
-      id: 6,
-      nombre: "Sky Lounge",
-      ubicacion: "Santa Fe, CDMX",
-      precio: 9500,
-      calificacion: 4.9,
-      capacidad: 60,
-      imagen: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&h=400&fit=crop",
-      categoria: "lujo",
-      descripcion: "Exclusivo rooftop con bar privado y DJ"
-    }
-  ];
 
   // Filtrar terrazas
   const terrazasFiltradas = terrazas.filter(terraza => {
@@ -267,6 +245,32 @@ const TerrazaApp = () => {
     { id: 'bohemio', nombre: 'Bohemias', icono: '' }
   ];
 
+  // Función para manejar reserva
+  const handleReservar = (terrazaId) => {
+    if (!user) {
+      // Redirigir al login si no está autenticado
+      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+      return;
+    }
+    
+    // Redirigir a la página de reserva
+    window.location.href = `/reserva/${terrazaId}`;
+  };
+
+  // Función para manejar favoritos
+  const handleFavorite = (terrazaId, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    // Aquí puedes implementar la lógica para agregar a favoritos
+    console.log('Agregar a favoritos:', terrazaId);
+  };
+
   return (
     <div className="terraza-app">
       {/* Header */}
@@ -274,8 +278,8 @@ const TerrazaApp = () => {
         <div className="header-container">
           <div className="logo-section">
             <div className="logo">
-              <span className="material-symbols-outlined">Terraza</span>
-              <h1>Express</h1>
+              <span className="material-symbols-outlined">terrace</span>
+              <h1>TerrazaApp</h1>
             </div>
           </div>
           
@@ -292,7 +296,7 @@ const TerrazaApp = () => {
                   className="icon-btn notification-btn"
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                 >
-                  <span className="material-symbols-outlined">🔔</span>
+                  <span className="material-symbols-outlined">notifications</span>
                   {unreadNotifications > 0 && (
                     <span className="notification-badge">{unreadNotifications}</span>
                   )}
@@ -337,35 +341,28 @@ const TerrazaApp = () => {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
                   <div className="avatar">
-                    <span>{user.name.charAt(0)}</span>
+                    <span>{user.name ? user.name.charAt(0) : 'U'}</span>
                   </div>
                   <span className="user-name">{user.name}</span>
                   
-                  
                   {userMenuOpen && (
                     <div className="user-dropdown">
-                      <a className="dropdown-item" href="/client/Profile">
-                        <span className="material-symbols-outlined"></span>
+                      <a className="dropdown-item" href="/client/profile">
+                        <span className="material-symbols-outlined">person</span>
                         Mi Perfil
                       </a>
                       <a 
                         className="dropdown-item" 
                         href="/client/profile#configuracion"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          // Redirigir al perfil con la pestaña de configuración activa
-                          window.location.href = '/client/profile#configuracion';
-                          setUserMenuOpen(false);
-                        }}
                       >
-                        <span className="material-symbols-outlined"></span>
+                        <span className="material-symbols-outlined">settings</span>
                         Configuración
                       </a>
                       <div className="dropdown-divider"></div>
-                      <a className="dropdown-item" onClick={handleLogout}>
-                        <span className="material-symbols-outlined"></span>
+                      <button className="dropdown-item" onClick={handleLogout}>
+                        <span className="material-symbols-outlined">logout</span>
                         Cerrar Sesión
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -390,12 +387,12 @@ const TerrazaApp = () => {
               </h1>
               <p className="hero-description">
                 Explora, compara y reserva el lugar ideal para tu próxima celebración. 
-                Más de 500 terrazas disponibles en la CDMX.
+                {terrazas.length}+ terrazas disponibles en la CDMX.
               </p>
               
               <div className="hero-stats">
                 <div className="stat">
-                  <div className="stat-number">500+</div>
+                  <div className="stat-number">{terrazas.length}+</div>
                   <div className="stat-label">Terrazas</div>
                 </div>
                 <div className="stat">
@@ -410,38 +407,21 @@ const TerrazaApp = () => {
             </div>
             
             <div className="hero-cards">
-              <div className="floating-card card-1">
-                <div className="card-image" style={{backgroundImage: 'url(https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=300&h=200&fit=crop)'}}></div>
-                <div className="card-content">
-                  <h4>Terraza del Sol</h4>
-                  <div className="card-rating">
-                    <span className="material-symbols-outlined">star</span>
-                    <span>4.8</span>
+              {terrazas.slice(0, 3).map((terraza, index) => (
+                <div key={terraza.id} className={`floating-card card-${index + 1}`}>
+                  <div 
+                    className="card-image"
+                    style={{backgroundImage: `url(${terraza.imagen})`}}
+                  ></div>
+                  <div className="card-content">
+                    <h4>{terraza.nombre}</h4>
+                    <div className="card-rating">
+                      <span className="material-symbols-outlined">star</span>
+                      <span>{terraza.calificacion}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="floating-card card-2">
-                <div className="card-image" style={{backgroundImage: 'url(https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=300&h=200&fit=crop)'}}></div>
-                <div className="card-content">
-                  <h4>Vistas al Jardín</h4>
-                  <div className="card-rating">
-                    <span className="material-symbols-outlined">star</span>
-                    <span>4.9</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="floating-card card-3">
-                <div className="card-image" style={{backgroundImage: 'url(https://images.unsplash.com/photo-1564013797767-2f7b0eb10aac?w=300&h=200&fit=crop)'}}></div>
-                <div className="card-content">
-                  <h4>Rooftop Moderno</h4>
-                  <div className="card-rating">
-                    <span className="material-symbols-outlined">star</span>
-                    <span>4.7</span>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -452,7 +432,7 @@ const TerrazaApp = () => {
         <div className="search-container">
           <div className="search-bar">
             <div className="search-input-container">
-              <span className="material-symbols-outlined search-icon">🔍</span>
+              <span className="material-symbols-outlined search-icon">search</span>
               <input
                 type="text"
                 className="search-input"
@@ -467,7 +447,7 @@ const TerrazaApp = () => {
                 className={`filter-btn ${showFilters ? 'active' : ''}`}
                 onClick={() => setShowFilters(!showFilters)}
               >
-                <span className="material-symbols-outlined"></span>
+                <span className="material-symbols-outlined">filter_list</span>
                 Filtros
               </button>
             </div>
@@ -482,9 +462,6 @@ const TerrazaApp = () => {
                   className={`category-btn ${activeFilter === categoria.id ? 'active' : ''}`}
                   onClick={() => setActiveFilter(categoria.id)}
                 >
-                  {categoria.icono && (
-                    <span className="material-symbols-outlined category-icon">{categoria.icono}</span>
-                  )}
                   {categoria.nombre}
                 </button>
               ))}
@@ -497,7 +474,7 @@ const TerrazaApp = () => {
               <div className="filters-header">
                 <h3>Filtros Avanzados</h3>
                 <button className="clear-filters" onClick={limpiarFiltros}>
-                  <span className="material-symbols-outlined"></span>
+                  <span className="material-symbols-outlined">clear_all</span>
                   Limpiar Filtros
                 </button>
               </div>
@@ -506,7 +483,7 @@ const TerrazaApp = () => {
                 <div className="filter-field">
                   <label>Ubicación específica</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined"></span>
+                    <span className="material-symbols-outlined">location_on</span>
                     <input
                       type="text"
                       placeholder="Ej: Roma, Polanco..."
@@ -519,7 +496,7 @@ const TerrazaApp = () => {
                 <div className="filter-field">
                   <label>Precio mínimo</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined"></span>
+                    <span className="material-symbols-outlined">attach_money</span>
                     <input
                       type="number"
                       placeholder="Mínimo"
@@ -532,7 +509,7 @@ const TerrazaApp = () => {
                 <div className="filter-field">
                   <label>Precio máximo</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined"></span>
+                    <span className="material-symbols-outlined">attach_money</span>
                     <input
                       type="number"
                       placeholder="Máximo"
@@ -545,7 +522,7 @@ const TerrazaApp = () => {
                 <div className="filter-field">
                   <label>Calificación mínima</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined"></span>
+                    <span className="material-symbols-outlined">star</span>
                     <select
                       value={calificacionMin}
                       onChange={(e) => setCalificacionMin(e.target.value)}
@@ -555,6 +532,31 @@ const TerrazaApp = () => {
                       <option value="4.0">4.0+ Estrellas</option>
                       <option value="3.5">3.5+ Estrellas</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="filter-field">
+                  <label>Número de invitados</label>
+                  <div className="input-with-icon">
+                    <span className="material-symbols-outlined">group</span>
+                    <input
+                      type="number"
+                      placeholder="Mínimo de invitados"
+                      value={invitados}
+                      onChange={(e) => setInvitados(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="filter-field">
+                  <label>Fecha del evento</label>
+                  <div className="input-with-icon">
+                    <span className="material-symbols-outlined">calendar_today</span>
+                    <input
+                      type="date"
+                      value={fecha}
+                      onChange={(e) => setFecha(e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
@@ -569,7 +571,8 @@ const TerrazaApp = () => {
           <div className="results-header">
             <div className="results-info">
               <h2>
-                {terrazasFiltradas.length > 0 
+                {loading ? 'Cargando terrazas...' : 
+                 terrazasFiltradas.length > 0 
                   ? `${terrazasFiltradas.length} terrazas encontradas` 
                   : 'No se encontraron terrazas'}
               </h2>
@@ -589,61 +592,77 @@ const TerrazaApp = () => {
             )}
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Cargando terrazas disponibles...</p>
+            </div>
+          )}
+
           {/* Terraza Grid */}
-          <div className="terraza-grid">
-            {terrazasFiltradas.map(terraza => (
-              <div key={terraza.id} className="terraza-card">
-                <div className="card-image-section">
-                  <div 
-                    className="card-image"
-                    style={{backgroundImage: `url(${terraza.imagen})`}}
-                  ></div>
-                  <button className="favorite-btn">
-                    <span className="material-symbols-outlined">favorite</span>
-                  </button>
-                  <div className="card-badge">{terraza.categoria}</div>
-                </div>
-                
-                <div className="card-content">
-                  <div className="card-header">
-                    <h3 className="card-title">{terraza.nombre}</h3>
-                    <div className="rating">
-                      <span className="material-symbols-outlined">star</span>
-                      <span className="rating-value">{terraza.calificacion}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="card-location">
-                    <span className="material-symbols-outlined">location_on</span>
-                    {terraza.ubicacion}
-                  </div>
-                  
-                  <p className="card-description">{terraza.descripcion}</p>
-                  
-                  <div className="card-details">
-                    <div className="detail">
-                      <span className="material-symbols-outlined">group</span>
-                      <span>{terraza.capacidad} invitados</span>
-                    </div>
-                  </div>
-                  
-                  <div className="card-footer">
-                    <div className="price">
-                      <span className="price-amount">${terraza.precio.toLocaleString()}</span>
-                      <span className="price-label"> / evento</span>
-                    </div>
-                    <button className="reserve-btn">
-                      <span className="material-symbols-outlined">event_available</span>
-                      Reservar
+          {!loading && (
+            <div className="terraza-grid">
+              {terrazasFiltradas.map(terraza => (
+                <div key={terraza.id} className="terraza-card">
+                  <div className="card-image-section">
+                    <div 
+                      className="card-image"
+                      style={{backgroundImage: `url(${terraza.imagen})`}}
+                    ></div>
+                    <button 
+                      className="favorite-btn"
+                      onClick={(e) => handleFavorite(terraza.id, e)}
+                    >
+                      <span className="material-symbols-outlined">favorite</span>
                     </button>
+                    <div className="card-badge">{terraza.categoria}</div>
+                  </div>
+                  
+                  <div className="card-content">
+                    <div className="card-header">
+                      <h3 className="card-title">{terraza.nombre}</h3>
+                      <div className="rating">
+                        <span className="material-symbols-outlined">star</span>
+                        <span className="rating-value">{terraza.calificacion}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="card-location">
+                      <span className="material-symbols-outlined">location_on</span>
+                      {terraza.ubicacion}
+                    </div>
+                    
+                    <p className="card-description">{terraza.descripcion}</p>
+                    
+                    <div className="card-details">
+                      <div className="detail">
+                        <span className="material-symbols-outlined">group</span>
+                        <span>{terraza.capacidad} invitados</span>
+                      </div>
+                    </div>
+                    
+                    <div className="card-footer">
+                      <div className="price">
+                        <span className="price-amount">${terraza.precio.toLocaleString()}</span>
+                        <span className="price-label"> / evento</span>
+                      </div>
+                      <button 
+                        className="reserve-btn"
+                        onClick={() => handleReservar(terraza.id)}
+                      >
+                        <span className="material-symbols-outlined">event_available</span>
+                        Reservar
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Empty State */}
-          {terrazasFiltradas.length === 0 && (
+          {!loading && terrazasFiltradas.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon">
                 <span className="material-symbols-outlined">search_off</span>
@@ -664,8 +683,8 @@ const TerrazaApp = () => {
           <div className="footer-content">
             <div className="footer-section">
               <div className="footer-logo">
-                <span className="material-symbols-outlined">Terrazas</span>
-                <h3>Express</h3>
+                <span className="material-symbols-outlined">terrace</span>
+                <h3>TerrazaApp</h3>
               </div>
               <p>La plataforma líder para encontrar y reservar terrazas para tus eventos especiales.</p>
             </div>
@@ -673,7 +692,7 @@ const TerrazaApp = () => {
             <div className="footer-section">
               <h4>Enlaces Rápidos</h4>
               <a href="#explorar">Explorar Terrazas</a>
-              <a href="#publicar">Publicar Terraza</a>
+              <a href="/host/dashboard">Publicar Terraza</a>
               <a href="#ayuda">Centro de Ayuda</a>
               <a href="#contacto">Contacto</a>
             </div>

@@ -1,3 +1,4 @@
+// MyTerraces.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import "../css/hostcss/MyTerrace.css";
 import api from "../../api";
@@ -25,13 +26,34 @@ interface UserData {
   memberSince: string;
 }
 
+// Interface para las terrazas reales desde la API
 interface Terraza {
-  id: number;
-  nombre: string;
-  capacidad: number;
-  ciudad: string;
-  estado: string;
-  imagen: string;
+  _id: string;
+  terraceData: {
+    name: string;
+    description: string;
+    capacity: number;
+    location: string;
+    price: number;
+    contactPhone: string;
+    contactEmail: string;
+    amenities: string[];
+    rules: string;
+  };
+  photos: Array<{
+    fileId: string;
+    filename: string;
+    filePath: string;
+    originalName: string;
+    mimetype: string;
+    fileType: string;
+    size: number;
+  }>;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  adminNotes?: string;
 }
 
 const MisTerrazas = () => {
@@ -48,42 +70,8 @@ const MisTerrazas = () => {
   });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-
-  // Datos de ejemplo para las terrazas
-  const [terrazas] = useState<Terraza[]>([
-    {
-      id: 1,
-      nombre: "Terraza El Mirador",
-      capacidad: 50,
-      ciudad: "Madrid",
-      estado: "publicada",
-      imagen: "https://images.unsplash.com/photo-1549294413-26f195200c16?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-    },
-    {
-      id: 2,
-      nombre: "Terraza Jardín Secreto",
-      capacidad: 30,
-      ciudad: "Barcelona",
-      estado: "revision",
-      imagen: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-    },
-    {
-      id: 3,
-      nombre: "Rooftop Urbano Central",
-      capacidad: 75,
-      ciudad: "Valencia",
-      estado: "borrador",
-      imagen: "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-    },
-    {
-      id: 4,
-      nombre: "Oasis Costero",
-      capacidad: 100,
-      ciudad: "Málaga",
-      estado: "publicada",
-      imagen: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-    }
-  ]);
+  const [terrazas, setTerrazas] = useState<Terraza[]>([]);
+  const [loadingTerrazas, setLoadingTerrazas] = useState(true);
 
   // Notificaciones de ejemplo
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -113,7 +101,7 @@ const MisTerrazas = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
-  // Cargar datos del usuario al montar el componente
+  // Cargar datos del usuario y terrazas al montar el componente
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -132,14 +120,57 @@ const MisTerrazas = () => {
           }) : 'Jan 2023'
         });
         setLoading(false);
+        
+        // Cargar terrazas del usuario
+        loadUserTerrazas();
       } catch (error) {
         console.error('Error parsing user data:', error);
         handleLogout();
       }
     } else {
       setLoading(false);
+      setLoadingTerrazas(false);
     }
   }, []);
+
+  // Debug: Ver terrazas cargadas
+  useEffect(() => {
+    if (terrazas.length > 0) {
+      console.log('🔍 DEBUG - Terrazas cargadas:', terrazas);
+      terrazas.forEach((terraza, index) => {
+        console.log(`📸 Terraza ${index + 1}:`, {
+          nombre: terraza.terraceData.name,
+          fotos: terraza.photos,
+          urlImagen: getTerrazaImage(terraza)
+        });
+      });
+    }
+  }, [terrazas]);
+
+  // Función para cargar las terrazas del usuario desde la API
+  const loadUserTerrazas = async () => {
+    try {
+      setLoadingTerrazas(true);
+      console.log('📡 Cargando terrazas del usuario...');
+      
+      const response = await api.get('/publication-requests/my/requests');
+      
+      if (response.data.success) {
+        console.log('✅ Terrazas cargadas:', response.data.data);
+        setTerrazas(response.data.data);
+      } else {
+        console.error('❌ Error cargando terrazas:', response.data.message);
+      }
+    } catch (error: any) {
+      console.error('💥 Error al cargar terrazas:', error);
+      
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
+    } finally {
+      setLoadingTerrazas(false);
+    }
+  };
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -191,23 +222,161 @@ const MisTerrazas = () => {
     return user?.name ? user.name.charAt(0).toUpperCase() : 'U';
   };
 
+  // Mapear estados de la API a los estados del frontend
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
-      case 'publicada':
+      case 'approved':
         return { text: 'Publicada', class: 'estado-publicada' };
-      case 'revision':
+      case 'pending':
         return { text: 'En revisión', class: 'estado-revision' };
-      case 'borrador':
-        return { text: 'Borrador', class: 'estado-borrador' };
+      case 'rejected':
+        return { text: 'Rechazada', class: 'estado-borrador' };
       default:
         return { text: 'Desconocido', class: 'estado-desconocido' };
     }
   };
 
-  const filteredTerrazas = terrazas.filter(terraza =>
-    terraza.nombre.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (activeFilter === 'todas' || terraza.estado === activeFilter)
-  );
+  // Obtener URL de la imagen (usando la primera foto)
+  const getTerrazaImage = (terraza: Terraza) => {
+    console.log('🖼️ Procesando imagen para:', terraza.terraceData.name);
+    
+    if (terraza.photos && terraza.photos.length > 0) {
+      const primeraFoto = terraza.photos[0];
+      console.log('📸 Foto encontrada:', primeraFoto);
+      
+      // Para LocalFileService - usar el nombre del archivo
+      const fileName = primeraFoto.filename;
+      if (fileName) {
+        const imageUrl = `http://localhost:4000/api/terrace-images/${fileName}`;
+        console.log('🔗 URL generada:', imageUrl);
+        return imageUrl;
+      } else {
+        console.log('❌ Nombre de archivo no encontrado en la foto');
+      }
+    } else {
+      console.log('❌ No hay fotos para esta terraza');
+    }
+    
+    // Imagen por defecto si no hay fotos
+    console.log('🖼️ Usando imagen por defecto');
+    return "https://images.unsplash.com/photo-1549294413-26f195200c16?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+  };
+
+  // Filtrar terrazas
+  const filteredTerrazas = terrazas.filter(terraza => {
+    const matchesSearch = terraza.terraceData.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesFilter = true;
+    if (activeFilter !== 'todas') {
+      switch (activeFilter) {
+        case 'publicada':
+          matchesFilter = terraza.status === 'approved';
+          break;
+        case 'revision':
+          matchesFilter = terraza.status === 'pending';
+          break;
+        case 'borrador':
+          matchesFilter = terraza.status === 'rejected';
+          break;
+      }
+    }
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  // Formatear fecha
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  // Manejar eliminación de terraza
+  const handleDeleteTerraza = async (terrazaId: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta terraza?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Eliminando terraza:', terrazaId);
+      // Aquí puedes agregar la llamada a la API para eliminar cuando la implementes
+      // await api.delete(`/publication-requests/${terrazaId}`);
+      
+      // Por ahora, solo actualizamos el estado local
+      setTerrazas(terrazas.filter(t => t._id !== terrazaId));
+      alert('Terraza eliminada exitosamente');
+    } catch (error) {
+      console.error('Error eliminando terraza:', error);
+      alert('Error al eliminar la terraza');
+    }
+  };
+
+  // Renderizar botones según el estado de la terraza
+  const renderTerrazaActions = (terraza: Terraza) => {
+    switch (terraza.status) {
+      case 'approved':
+        // Terraza aprobada - mostrar todos los botones
+        return (
+          <>
+            <button className="action-btn" title="Editar terraza">
+              <span className="material-symbols-outlined">Editar</span>
+            </button>
+            <button className="action-btn" title="Ver detalles">
+              <span className="material-symbols-outlined">Ver</span>
+            </button>
+            <button className="action-btn" title="Ver reservas"> 
+              <span className="material-symbols-outlined">Fechas</span>
+            </button>
+            <button 
+              className="action-btn delete-btn" 
+              title="Eliminar terraza"
+              onClick={() => handleDeleteTerraza(terraza._id)}
+            >
+              <span className="material-symbols-outlined">Eliminar</span>
+            </button>
+          </>
+        );
+      
+      case 'pending':
+        // Terraza en revisión - solo eliminar y ver
+        return (
+          <>
+            <button className="action-btn" title="Ver detalles">
+              <span className="material-symbols-outlined">visibility</span>
+            </button>
+            <button 
+              className="action-btn delete-btn" 
+              title="Eliminar terraza"
+              onClick={() => handleDeleteTerraza(terraza._id)}
+            >
+              <span className="material-symbols-outlined">delete</span>
+            </button>
+          </>
+        );
+      
+      case 'rejected':
+        // Terraza rechazada - solo eliminar y ver
+        return (
+          <>
+            <button className="action-btn" title="Ver detalles">
+              <span className="material-symbols-outlined">visibility</span>
+            </button>
+            <button 
+              className="action-btn delete-btn" 
+              title="Eliminar terraza"
+              onClick={() => handleDeleteTerraza(terraza._id)}
+            >
+              <span className="material-symbols-outlined">delete</span>
+            </button>
+          </>
+        );
+      
+      default:
+        return null;
+    }
+  };
 
   if (loading) {
     return (
@@ -237,7 +406,7 @@ const MisTerrazas = () => {
                   className="icon-btn notification-btn"
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                 >
-                  <span className="material-symbols-outlined">🔔</span>
+                  <span className="material-symbols-outlined">notifications</span>
                   {unreadNotifications > 0 && (
                     <span className="notification-badge">{unreadNotifications}</span>
                   )}
@@ -340,7 +509,7 @@ const MisTerrazas = () => {
                 href="/host/dashboard"
                 onClick={() => setActiveMenu('inicio')}
               >
-                <span className="material-symbols-outlined"></span>
+                <span className="material-symbols-outlined">home</span>
                 <span>Inicio</span>
               </a>
               <a 
@@ -348,7 +517,7 @@ const MisTerrazas = () => {
                 href="/host/MyTerraces"
                 onClick={() => setActiveMenu('terrazas')}
               >
-                <span className="material-symbols-outlined"></span>
+                <span className="material-symbols-outlined">terrace</span>
                 <span>Mis Terrazas</span>
               </a>
               <a 
@@ -356,7 +525,7 @@ const MisTerrazas = () => {
                 href="/host/reservations"
                 onClick={() => setActiveMenu('reservaciones')}
               >
-                <span className="material-symbols-outlined"></span>
+                <span className="material-symbols-outlined">calendar_month</span>
                 <span>Reservaciones</span>
               </a>
               <a 
@@ -364,8 +533,8 @@ const MisTerrazas = () => {
                 href="/host/DocumentVerification"
                 onClick={() => setActiveMenu('nueva-terraza')}
               >
-                <span className="material-symbols-outlined"></span>
-                <span>Subir permisos</span>
+                <span className="material-symbols-outlined">add</span>
+                <span>Subir nueva terraza</span>
               </a>
             </nav>
           </div>
@@ -396,7 +565,45 @@ const MisTerrazas = () => {
             <div className="content-container">
               {/* Page Heading */}
               <div className="page-heading">
-                <h2>Mis Terrazas</h2>
+                <div className="heading-main">
+                  <h2>Mis Terrazas</h2>
+                  <p>Gestiona todas tus terrazas publicadas</p>
+                </div>
+                <div className="heading-actions">
+                  <button 
+                    className="btn-primary"
+                    onClick={() => window.location.href = '/host/DocumentVerification'}
+                  >
+                    <span className="material-symbols-outlined">add</span>
+                    Nueva Terraza
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-content">
+                    <span className="stat-number">{terrazas.length}</span>
+                    <span className="stat-label">Total Terrazas</span>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-content">
+                    <span className="stat-number">
+                      {terrazas.filter(t => t.status === 'approved').length}
+                    </span>
+                    <span className="stat-label">Publicadas</span>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-content">
+                    <span className="stat-number">
+                      {terrazas.filter(t => t.status === 'pending').length}
+                    </span>
+                    <span className="stat-label">En Revisión</span>
+                  </div>
+                </div>
               </div>
 
               {/* SearchBar & Chips */}
@@ -437,55 +644,108 @@ const MisTerrazas = () => {
                     className={`filter-chip ${activeFilter === 'borrador' ? 'active' : ''}`}
                     onClick={() => setActiveFilter('borrador')}
                   >
-                    Borrador
+                    Rechazada
                   </button>
                 </div>
               </div>
 
+              {/* Loading State */}
+              {loadingTerrazas && (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Cargando tus terrazas...</p>
+                </div>
+              )}
+
               {/* Terraza Grid */}
-              <div className="terrazas-grid">
-                {filteredTerrazas.map(terraza => {
-                  const estadoBadge = getEstadoBadge(terraza.estado);
-                  return (
-                    <div key={terraza.id} className="terraza-card">
-                      <div className="terraza-image-container">
-                        <div 
-                          className="terraza-image"
-                          style={{ backgroundImage: `url(${terraza.imagen})` }}
-                        ></div>
-                        <span className={`estado-badge ${estadoBadge.class}`}>
-                          {estadoBadge.text}
-                        </span>
-                      </div>
-                      <div className="terraza-content">
-                        <h3 className="terraza-nombre">{terraza.nombre}</h3>
-                        <p className="terraza-info">Capacidad: {terraza.capacidad}, {terraza.ciudad}</p>
-                        <div className="terraza-actions">
-                          <button className="action-btn" title="Editar terraza">
-                            <span className="material-symbols-outlined">edit</span>
-                          </button>
-                          <button className="action-btn" title="Ver reservas">
-                            <span className="material-symbols-outlined">calendar_month</span>
-                          </button>
-                          <button className="action-btn delete-btn" title="Eliminar terraza">
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
+              {!loadingTerrazas && (
+                <div className="terrazas-grid">
+                  {filteredTerrazas.map(terraza => {
+                    const estadoBadge = getEstadoBadge(terraza.status);
+                    return (
+                      <div key={terraza._id} className="terraza-card">
+                        <div className="terraza-image-container">
+                          <img
+                            src={getTerrazaImage(terraza)}
+                            alt={terraza.terraceData.name}
+                            className="terraza-image"
+                            onError={(e) => {
+                              console.error('❌ Error cargando imagen para:', terraza.terraceData.name);
+                              console.error('🔗 URL fallida:', e.currentTarget.src);
+                              e.currentTarget.src = "https://images.unsplash.com/photo-1549294413-26f195200c16?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+                            }}
+                            onLoad={() => {
+                              console.log('✅ Imagen cargada exitosamente:', terraza.terraceData.name);
+                            }}
+                          />
+                          <span className={`estado-badge ${estadoBadge.class}`}>
+                            {estadoBadge.text}
+                          </span>
+                          <div className="terraza-overlay">
+                            <span className="terraza-price">
+                              ${terraza.terraceData.price}/hora
+                            </span>
+                          </div>
+                        </div>
+                        <div className="terraza-content">
+                          <h3 className="terraza-nombre">{terraza.terraceData.name}</h3>
+                          <p className="terraza-description">
+                            {terraza.terraceData.description.substring(0, 100)}...
+                          </p>
+                          <div className="terraza-details">
+                            <div className="terraza-detail">
+                              <span className="material-symbols-outlined">groups</span>
+                              <span>Capacidad: {terraza.terraceData.capacity}</span>
+                            </div>
+                            <div className="terraza-detail">
+                              <span className="material-symbols-outlined">location_on</span>
+                              <span>{terraza.terraceData.location}</span>
+                            </div>
+                            <div className="terraza-detail">
+                              <span className="material-symbols-outlined">date_range</span>
+                              <span>Creada: {formatDate(terraza.createdAt)}</span>
+                            </div>
+                          </div>
+                          {terraza.terraceData.amenities.length > 0 && (
+                            <div className="terraza-amenities">
+                              {terraza.terraceData.amenities.slice(0, 3).map((amenity, index) => (
+                                <span key={index} className="amenity-tag">
+                                  {amenity}
+                                </span>
+                              ))}
+                              {terraza.terraceData.amenities.length > 3 && (
+                                <span className="amenity-more">
+                                  +{terraza.terraceData.amenities.length - 3} más
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <div className="terraza-actions">
+                            {renderTerrazaActions(terraza)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Empty State */}
-              {filteredTerrazas.length === 0 && (
+              {!loadingTerrazas && filteredTerrazas.length === 0 && (
                 <div className="empty-state">
                   <span className="material-symbols-outlined">deck</span>
                   <h3>No se encontraron terrazas</h3>
-                  <p>No hay terrazas que coincidan con tu búsqueda</p>
-                  <button className="btn-primary">
+                  <p>
+                    {terrazas.length === 0 
+                      ? "Aún no has publicado ninguna terraza. ¡Comienza ahora!" 
+                      : "No hay terrazas que coincidan con tu búsqueda"}
+                  </p>
+                  <button 
+                    className="btn-primary"
+                    onClick={() => window.location.href = '/host/DocumentVerification'}
+                  >
                     <span className="material-symbols-outlined">add</span>
-                    Añadir mi primera terraza
+                    {terrazas.length === 0 ? 'Publicar mi primera terraza' : 'Nueva Terraza'}
                   </button>
                 </div>
               )}

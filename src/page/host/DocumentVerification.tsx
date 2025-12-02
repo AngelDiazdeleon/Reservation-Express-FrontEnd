@@ -930,7 +930,7 @@ const DocumentVerification: React.FC = () => {
                         {/* Botón Continuar a Subir Terraza para sesiones completamente aprobadas */}
                         {isSessionFullyApproved(session) && (
                           <div className="session-action-buttons">
-                            <a href="/host/MyTerraces">
+                            <a href="/host/addTerraces">
                               <button 
                                 className="continue-terraza-button session-continue-btn"
                                 onClick={handleContinueToTerraza}
