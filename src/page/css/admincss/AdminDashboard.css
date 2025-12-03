@@ -3,9 +3,9 @@
 /* VARIABLES */
 :root {
   /* Colores principales (los mismos del login) */
-  --primary-color: #4f46e5;
-  --primary-dark: #4338ca;
-  --primary-light: #818cf8;
+  --primary-color: #62BEB2;
+  --primary-dark: #2A9D8F;
+  --primary-light: #7ec5bc;
   --secondary-color: #62BEB2;
   --button-color: #62BEB2;
   
@@ -16,8 +16,8 @@
   --surface-dark: #f0f0f0;
   
   /* Colores de texto */
-  --text-primary: #196ee4;
-  --text-secondary: #2c65d6;
+  --text-primary: #62BEB2;
+  --text-secondary: #2A9D8F;
   --text-light: #9ca3af;
   --text-white: #000000;
   

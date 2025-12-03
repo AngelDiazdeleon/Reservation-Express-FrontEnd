@@ -1,7 +1,7 @@
 // src/pages/client/MyReservations.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { reservationApi } from '../../api'; // Importa específicamente la API de reservas
+import { reservationApi } from '../../api';
 import '../css/clientcss/MyReservations.css';
 
 const MyReservations: React.FC = () => {
@@ -16,6 +16,11 @@ const MyReservations: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
+  const [offlineStats, setOfflineStats] = useState({
+    total: 0,
+    sincronizadas: 0,
+    pendientes: 0
+  });
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -24,7 +29,6 @@ const MyReservations: React.FC = () => {
     }
     fetchReservations();
     
-    // Cerrar menú al hacer clic fuera
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
@@ -37,21 +41,68 @@ const MyReservations: React.FC = () => {
 
   useEffect(() => {
     filterReservations();
+    calculateOfflineStats();
   }, [reservations, activeTab, searchTerm, timeFilter]);
+
+  const calculateOfflineStats = () => {
+    const offlineReservations = reservations.filter(res => 
+      res.syncedFromOffline || 
+      res.metadata?.syncedFromOffline || 
+      res.metadata?.originalClienteId?.startsWith('local_')
+    );
+    
+    const sincronizadas = offlineReservations.filter(res => 
+      res._id && !res._id.startsWith('local_')
+    ).length;
+    
+    const pendientes = offlineReservations.filter(res => 
+      res._id && res._id.startsWith('local_')
+    ).length;
+    
+    setOfflineStats({
+      total: offlineReservations.length,
+      sincronizadas,
+      pendientes
+    });
+  };
 
   const fetchReservations = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Usa la API específica para reservas
       const response = await reservationApi.getMyReservations();
       
       console.log('📋 Respuesta de la API:', response.data);
       
       if (response.data.success) {
-        const sortedReservations = (response.data.data || [])
+        let reservationsData = response.data.data || [];
+        
+        // Enriquecer datos para mostrar información offline
+        reservationsData = reservationsData.map((res: any) => {
+          const isOfflineCreated = 
+            res.syncedFromOffline || 
+            res.metadata?.syncedFromOffline || 
+            res.metadata?.originalClienteId?.startsWith('local_') ||
+            res.originalClienteId?.startsWith('local_');
+          
+          const isLocalOnly = res._id && res._id.startsWith('local_');
+          const isSyncedFromOffline = isOfflineCreated && !isLocalOnly;
+          
+          return {
+            ...res,
+            isOfflineCreated,
+            isLocalOnly,
+            isSyncedFromOffline,
+            // Para compatibilidad con el código existente
+            isOfflineSynced: isSyncedFromOffline,
+            offlineBadgeType: isLocalOnly ? 'pendiente' : 'sincronizada'
+          };
+        });
+        
+        const sortedReservations = reservationsData
           .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
         setReservations(sortedReservations);
       } else {
         setError(response.data.message || 'Error al obtener reservas');
@@ -60,7 +111,6 @@ const MyReservations: React.FC = () => {
       console.error('❌ Error al obtener reservas:', error);
       setError('No se pudieron cargar las reservas. Verifica tu conexión.');
       
-      // Si es error 401, redirigir a login
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -74,21 +124,18 @@ const MyReservations: React.FC = () => {
   const filterReservations = () => {
     let filtered = [...reservations];
     
-    // Filtrar por búsqueda
     if (searchTerm) {
       filtered = filtered.filter(res => 
         res.terrazaNombre.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
-    // Filtrar por tipo
     if (activeTab === 'eventos') {
       filtered = filtered.filter(res => !res.esVisita);
     } else if (activeTab === 'visitas') {
       filtered = filtered.filter(res => res.esVisita);
     }
     
-    // Filtrar por tiempo
     const now = new Date();
     switch(timeFilter) {
       case '30-dias':
@@ -101,7 +148,6 @@ const MyReservations: React.FC = () => {
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
         filtered = filtered.filter(res => new Date(res.createdAt) >= threeMonthsAgo);
         break;
-      // 'todo' no necesita filtro
     }
     
     setFilteredReservations(filtered);
@@ -206,6 +252,25 @@ const MyReservations: React.FC = () => {
     }
   };
 
+  const getOfflineBadgeInfo = (res: any) => {
+    if (res.isLocalOnly) {
+      return {
+        text: 'Pendiente de sincronización',
+        icon: 'cloud_off',
+        color: 'offline-pending',
+        tooltip: 'Esta reserva se creó sin conexión y aún no se ha sincronizado con el servidor.'
+      };
+    } else if (res.isSyncedFromOffline) {
+      return {
+        text: 'Creada offline',
+        icon: 'cloud_sync',
+        color: 'offline-synced',
+        tooltip: 'Esta reserva se creó sin conexión y ya está sincronizada con el servidor.'
+      };
+    }
+    return null;
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -220,20 +285,30 @@ const MyReservations: React.FC = () => {
     try {
       await reservationApi.cancelReservation(id);
       alert('Reserva cancelada exitosamente');
-      fetchReservations(); // Recargar las reservas
+      fetchReservations();
     } catch (error: any) {
       console.error('Error al cancelar:', error);
       alert(error.response?.data?.message || 'No se pudo cancelar la reserva');
     }
   };
 
+  const handleManualSync = async () => {
+    try {
+      alert('Iniciando sincronización manual...');
+      await reservationApi.syncOfflineData();
+      alert('Sincronización completada');
+      fetchReservations();
+    } catch (error) {
+      console.error('Error en sincronización:', error);
+      alert('Error en sincronización. Por favor, inténtalo nuevamente.');
+    }
+  };
+
   const handleContactHost = (terrazaId: string) => {
-    console.log('Contactar al anfitrión de terraza:', terrazaId);
     alert('Funcionalidad de contacto en desarrollo');
   };
 
   const handleLeaveReview = (terrazaId: string) => {
-    console.log('Dejar reseña para terraza:', terrazaId);
     alert('Funcionalidad de reseñas en desarrollo');
   };
 
@@ -241,7 +316,6 @@ const MyReservations: React.FC = () => {
     navigate(`/client/terraza/${terrazaId}`);
   };
 
-  // Separar reservas activas e historial
   const activeReservations = filteredReservations.filter(res => 
     res.estado === 'pendiente' || res.estado === 'confirmada'
   );
@@ -250,7 +324,6 @@ const MyReservations: React.FC = () => {
     res.estado === 'completada' || res.estado === 'cancelada'
   );
 
-  // Estado de carga mejorado
   if (loading) {
     return (
       <div className="my-reservations-container">
@@ -307,7 +380,6 @@ const MyReservations: React.FC = () => {
     );
   }
 
-  // Estado de error
   if (error) {
     return (
       <div className="my-reservations-container">
@@ -433,10 +505,50 @@ const MyReservations: React.FC = () => {
       <main className="my-reservations-main">
         <div className="container">
           <div className="page-header">
-            <h1 className="page-title">Mis Reservas</h1>
-            <p className="page-subtitle">Visualiza y gestiona tus reservas activas y pasadas.</p>
+            <div className="header-row">
+              <div>
+                <h1 className="page-title">Mis Reservas</h1>
+                <p className="page-subtitle">Visualiza y gestiona tus reservas activas y pasadas.</p>
+              </div>
+              
+              {offlineStats.total > 0 && (
+                <div className="offline-stats">
+                  <div className="offline-stats-card">
+                    <div className="offline-stats-title">
+                      <span className="material-symbols-outlined">cloud</span>
+                      Reservas Offline
+                    </div>
+                    <div className="offline-stats-content">
+                      <div className="offline-stat">
+                        <span className="stat-number">{offlineStats.total}</span>
+                        <span className="stat-label">Total offline</span>
+                      </div>
+                      <div className="offline-stat">
+                        <span className="stat-number success">{offlineStats.sincronizadas}</span>
+                        <span className="stat-label">Sincronizadas</span>
+                      </div>
+                      <div className="offline-stat">
+                        <span className="stat-number warning">{offlineStats.pendientes}</span>
+                        <span className="stat-label">Pendientes</span>
+                      </div>
+                    </div>
+                    {offlineStats.pendientes > 0 && (
+                      <button 
+                        onClick={handleManualSync}
+                        className="offline-sync-btn"
+                      >
+                        <span className="material-symbols-outlined">sync</span>
+                        Sincronizar ahora
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <p className="text-sm text-gray-600 mt-2">
               Mostrando {filteredReservations.length} de {reservations.length} reservas
+              {offlineStats.total > 0 && ` · ${offlineStats.total} creadas offline`}
             </p>
           </div>
 
@@ -499,13 +611,23 @@ const MyReservations: React.FC = () => {
               <div className="reservations-grid">
                 {activeReservations.map((res) => {
                   const status = getStatusInfo(res.estado, res.esVisita);
+                  const offlineBadge = getOfflineBadgeInfo(res);
+                  
                   return (
-                    <div key={res._id} className="reservation-card">
+                    <div key={res._id} className={`reservation-card ${res.isOfflineCreated ? 'offline-created' : ''}`}>
                       <div className="card-header">
                         <div>
-                          <p className="card-type">
-                            {res.esVisita ? '🎯 CITA PARA VISITA' : '🎉 EVENTO'}
-                          </p>
+                          <div className="card-type-row">
+                            <p className="card-type">
+                              {res.esVisita ? '🎯 CITA PARA VISITA' : '🎉 EVENTO'}
+                            </p>
+                            {offlineBadge && (
+                              <span className={`offline-badge ${offlineBadge.color}`} title={offlineBadge.tooltip}>
+                                <span className="material-symbols-outlined">{offlineBadge.icon}</span>
+                                {offlineBadge.text}
+                              </span>
+                            )}
+                          </div>
                           <h3 className="card-title">{res.terrazaNombre}</h3>
                         </div>
                         <div className={`status-badge ${status.bgColor} ${status.textColor}`}>
@@ -516,11 +638,11 @@ const MyReservations: React.FC = () => {
                       
                       <div className="card-details">
                         <div className="detail-item">
-                          <span className="material-symbols-outlined">Fecha</span>
+                          <span className="material-symbols-outlined">calendar_today</span>
                           <span>{formatDate(res.fechaReserva)}</span>
                         </div>
                         <div className="detail-item">
-                          <span className="material-symbols-outlined">Hora</span>
+                          <span className="material-symbols-outlined">schedule</span>
                           <span>
                             {formatTime(res.horaInicio)} - {formatTime(res.horaFin)}
                           </span>
@@ -531,23 +653,31 @@ const MyReservations: React.FC = () => {
                             <span>{res.tipoEvento}</span>
                           </div>
                         )}
+                        {res.isOfflineCreated && (
+                          <div className="detail-item">
+                            <span className="material-symbols-outlined">cloud</span>
+                            <span>
+                              {res.isLocalOnly ? 'Pendiente de sincronización' : 'Sincronizada desde offline'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="card-actions">
-                        {res.estado === 'pendiente' ? (
+                        {res.estado === 'pendiente' && (
                           <button 
                             className="btn-secondary"
                             onClick={() => handleCancel(res._id)}
+                            disabled={res.isLocalOnly}
                           >
                             Cancelar {res.esVisita ? 'Cita' : 'Reserva'}
                           </button>
-                        ) : (
-                          <button 
-                            className="btn-secondary"
-                            onClick={() => handleContactHost(res.terrazaId)}
-                          >
-                            Contactar Anfitrión
-                          </button>
+                        )}
+                        {res.isLocalOnly && (
+                          <div className="offline-note">
+                            <span className="material-symbols-outlined">info</span>
+                            Conéctate a internet para sincronizar esta reserva
+                          </div>
                         )}
                       </div>
                     </div>
@@ -567,13 +697,23 @@ const MyReservations: React.FC = () => {
               <div className="reservations-grid">
                 {historyReservations.map((res) => {
                   const status = getStatusInfo(res.estado, res.esVisita);
+                  const offlineBadge = getOfflineBadgeInfo(res);
+                  
                   return (
-                    <div key={res._id} className="reservation-card">
+                    <div key={res._id} className={`reservation-card ${res.isOfflineCreated ? 'offline-created' : ''}`}>
                       <div className="card-header">
                         <div>
-                          <p className="card-type">
-                            {res.esVisita ? '🎯 CITA PARA VISITA' : '🎉 EVENTO'}
-                          </p>
+                          <div className="card-type-row">
+                            <p className="card-type">
+                              {res.esVisita ? '🎯 CITA PARA VISITA' : '🎉 EVENTO'}
+                            </p>
+                            {offlineBadge && (
+                              <span className={`offline-badge ${offlineBadge.color}`} title={offlineBadge.tooltip}>
+                                <span className="material-symbols-outlined">{offlineBadge.icon}</span>
+                                {offlineBadge.text}
+                              </span>
+                            )}
+                          </div>
                           <h3 className="card-title">{res.terrazaNombre}</h3>
                         </div>
                         <div className={`status-badge ${status.bgColor} ${status.textColor}`}>
@@ -631,12 +771,12 @@ const MyReservations: React.FC = () => {
           {filteredReservations.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon">
-                <span className="material-symbols-outlined">Eventos</span>
+                <span className="material-symbols-outlined">event</span>
               </div>
               <h3>Aún no tienes reservas activas</h3>
               <p>Parece que no tienes ningún evento o cita programada. ¡Encuentra el lugar perfecto para tu próximo evento!</p>
               <Link to="/client/home" className="btn-explore">
-                <span className="material-symbols-outlined"></span>
+                <span className="material-symbols-outlined">explore</span>
                 Explorar Terrazas
               </Link>
             </div>

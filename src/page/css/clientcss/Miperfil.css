@@ -2,7 +2,7 @@
 :root {
   /* Colores principales */
   --primary-color: #62BEB2;
-  --primary-dark: #2A9D8F;
+  --primary-dark: #62BEB2;
   --primary-gradient: linear-gradient(135deg, #2A9D8F 0%, #78e4c9 100%);
   --secondary-gradient: linear-gradient(135deg, #ffffff 0%, #fff4f5 100%);
   

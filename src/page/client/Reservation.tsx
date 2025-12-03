@@ -1,7 +1,6 @@
-//Reservation.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import api from '../../api';
+import { reservationApi } from '../../api'; // Cambiamos a la API con soporte offline
 import '../css/clientcss/Reservation.css';
 
 const ReservationClient: React.FC = () => {
@@ -25,15 +24,18 @@ const ReservationClient: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [comentarios, setComentarios] = useState('');
   const [showEventTypeSelector, setShowEventTypeSelector] = useState(false);
-  const [horasVisita, setHorasVisita] = useState(1.5); // 1h30 por defecto para visitas
-  
+  const [horasVisita, setHorasVisita] = useState(1.5);
+  const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
+  const [showOfflineBanner, setShowOfflineBanner] = useState(!navigator.onLine);
+  const [pendingSync, setPendingSync] = useState(0);
+
   const [formData, setFormData] = useState({
     nombreCompleto: '',
     email: '',
     phone: '',
     fechaReserva: fecha || '',
     horaInicio: esVisita ? '10:00' : '18:00',
-    horaFin: esVisita ? '11:30' : '23:00', // Para reserva: 5 horas después de inicio
+    horaFin: esVisita ? '11:30' : '23:00',
     tipoEvento: 'Cumpleaños'
   });
 
@@ -42,6 +44,22 @@ const ReservationClient: React.FC = () => {
       navigate('/client/home');
       return;
     }
+
+    // Configurar listeners para cambios de conexión
+    const handleOnline = () => {
+      setOfflineMode(false);
+      setShowOfflineBanner(false);
+      console.log('🌐 Conexión restaurada');
+    };
+    
+    const handleOffline = () => {
+      setOfflineMode(true);
+      setShowOfflineBanner(true);
+      console.log('📴 Modo offline activado');
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     // Calcular hora fin inicial para visita (1h30 después)
     if (esVisita) {
@@ -75,6 +93,9 @@ const ReservationClient: React.FC = () => {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        // Guardar userId en localStorage para uso offline
+        localStorage.setItem('userId', parsedUser.id || parsedUser._id || '');
+        
         setFormData(prev => ({
           ...prev,
           nombreCompleto: parsedUser.name || 'Carlos perfil de pruebas',
@@ -85,6 +106,9 @@ const ReservationClient: React.FC = () => {
       }
     }
 
+    // Verificar operaciones pendientes
+    checkPendingOperations();
+
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
@@ -92,14 +116,27 @@ const ReservationClient: React.FC = () => {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [terrazaId, navigate, esVisita]);
+
+  const checkPendingOperations = async () => {
+    try {
+      const status = await reservationApi.getOfflineStatus();
+      setPendingSync(status.pendingOperations);
+    } catch (error) {
+      console.error('Error verificando estado offline:', error);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     if (name === 'horaInicio' && !esVisita) {
-      // Para reserva: calcular hora fin (5 horas después)
       const [horasInicio, minutosInicio] = value.split(':').map(Number);
       const horaFinCalculada = horasInicio + 5;
       const horaFinFormateada = `${horaFinCalculada.toString().padStart(2, '0')}:${minutosInicio.toString().padStart(2, '0')}`;
@@ -110,7 +147,6 @@ const ReservationClient: React.FC = () => {
         horaFin: horaFinFormateada
       }));
     } else if (name === 'horaInicio' && esVisita) {
-      // Para visita: calcular hora fin basada en duración seleccionada
       const [horasInicio, minutosInicio] = value.split(':').map(Number);
       const minutosTotales = horasInicio * 60 + minutosInicio + Math.round(horasVisita * 60);
       const horasFin = Math.floor(minutosTotales / 60);
@@ -140,7 +176,6 @@ const ReservationClient: React.FC = () => {
 
   const handleHorasVisitaChange = (horas: number) => {
     setHorasVisita(horas);
-    // Calcular hora fin basada en hora inicio y duración
     if (formData.horaInicio) {
       const [horasInicio, minutosInicio] = formData.horaInicio.split(':').map(Number);
       const minutosTotales = horasInicio * 60 + minutosInicio + Math.round(horas * 60);
@@ -155,102 +190,171 @@ const ReservationClient: React.FC = () => {
     }
   };
 
-  // Reservation.tsx - MODIFICA SOLO LA FUNCIÓN handleSubmit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // FUNCIÓN MODIFICADA CON SOPORTE OFFLINE
+  // FUNCIÓN MODIFICADA CON SOPORTE OFFLINE Y DEBUGGING
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Por favor inicia sesión para continuar');
-        navigate('/login');
-        return;
-      }
-
-      const reservationData = {
-        terrazaId,
-        terrazaNombre,
-        fechaReserva: formData.fechaReserva,
-        horaInicio: formData.horaInicio,
-        horaFin: formData.horaFin,
-        tipoEvento: formData.tipoEvento,
-        comentarios,
-        nombreCliente: formData.nombreCompleto,
-        emailCliente: formData.email,
-        phoneCliente: formData.phone,
-        esVisita: esVisita,
-        estado: 'pendiente',
-        precioTotal: esVisita ? 0 : precio,
-        ubicacion,
-        capacidad,
-        propietarioNombre: propietario?.nombre || 'Propietario',
-        duracionVisita: esVisita ? horasVisita : 5
-      };
-
-      console.log('📤 Enviando reserva a la API:', reservationData);
-
-      // LLAMADA REAL A LA API
-      const response = await api.post('/reservations/create', reservationData, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      setLoading(false);
-      
-      if (response.data.success) {
-        let mensaje = '';
-        
-        if (esVisita) {
-          mensaje = '✅ Solicitud de visita enviada correctamente. Te contactaremos pronto.';
-        } else {
-          mensaje = '✅ Reserva realizada correctamente. Revisa tu email para más detalles.';
-        }
-        
-        alert(mensaje);
-        navigate('/client/home');
-      } else {
-        alert('Error al procesar la solicitud: ' + response.data.message);
-      }
-
-    } catch (error: any) {
-      console.error('Error al realizar la reserva:', error);
-      
-      // Mostrar mensaje de error específico
-      if (error.response) {
-        if (error.response.status === 401) {
-          alert('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
-          navigate('/login');
-        } else if (error.response.data?.message) {
-          alert('Error: ' + error.response.data.message);
-        } else {
-          alert('Error al procesar la reserva. Intenta nuevamente.');
-        }
-      } else {
-        alert('Error de conexión. Verifica tu internet e intenta nuevamente.');
-      }
-      
-      setLoading(false);
+  try {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId') || JSON.parse(localStorage.getItem('user') || '{}').id;
+    
+    if (!token || !userId) {
+      alert('Por favor inicia sesión para continuar');
+      navigate('/login');
+      return;
     }
-  };
+
+    const reservationData = {
+      terrazaId,
+      terrazaNombre,
+      fechaReserva: formData.fechaReserva,
+      horaInicio: formData.horaInicio,
+      horaFin: formData.horaFin,
+      tipoEvento: formData.tipoEvento,
+      descripcion: comentarios,
+      numPersonas: capacidad,
+      nombreCliente: formData.nombreCompleto,
+      emailCliente: formData.email,
+      phoneCliente: formData.phone,
+      esVisita: esVisita,
+      estado: 'pendiente',
+      precioTotal: esVisita ? 0 : precio,
+      ubicacion,
+      capacidad,
+      propietarioNombre: propietario?.nombre || 'Propietario',
+      duracionVisita: esVisita ? horasVisita : 5
+    };
+
+    console.log('📤 Enviando reserva:', reservationData);
+    console.log('📶 Estado de conexión:', navigator.onLine ? 'Online' : 'Offline');
+
+    // USAMOS LA API CON SOPORTE OFFLINE
+    const response = await reservationApi.createReservation(reservationData);
+    
+    setLoading(false);
+    
+    if (response.data.success) {
+      let mensaje = '';
+      
+      if (response.data.offline) {
+        // Reserva guardada localmente
+        mensaje = esVisita 
+          ? '✅ Solicitud de visita guardada localmente. Se sincronizará automáticamente cuando haya conexión.'
+          : '✅ Reserva guardada localmente. Se sincronizará automáticamente cuando haya conexión.';
+        
+        // Mostrar detalles de la reserva local
+        if (response.data.data) {
+          console.log('📱 Reserva local creada:', response.data.data);
+          console.log('📱 ID de reserva local:', response.data.data?._id);
+          console.log('📦 Datos completos de la reserva local:', response.data.data);
+          
+          // Verificar que se guardó en IndexedDB
+          setTimeout(async () => {
+            console.log('🔄 Verificando estado offline...');
+            try {
+              const status = await reservationApi.getOfflineStatus();
+              console.log('📊 Estado offline después de guardar:');
+              console.log('   - ¿Hay conexión?:', status.isOnline ? 'Sí' : 'No');
+              console.log('   - Operaciones pendientes:', status.pendingOperations);
+              console.log('   - Reservas pendientes:', status.pendingReservations);
+              console.log('   - Total de reservas locales:', status.totalLocalReservations);
+              
+              // También verificar el outbox directamente
+              const { getOutbox } = await import('../../offline/db');
+              const outbox = await getOutbox();
+              console.log('📬 Contenido del outbox:', outbox);
+              
+            } catch (error) {
+              console.error('❌ Error verificando estado offline:', error);
+            }
+          }, 1000);
+        }
+      } else {
+        // Reserva enviada al servidor exitosamente
+        mensaje = esVisita 
+          ? '✅ Solicitud de visita enviada correctamente. Te contactaremos pronto.'
+          : '✅ Reserva realizada correctamente. Revisa tu email para más detalles.';
+        
+        console.log('✅ Reserva enviada al servidor exitosamente');
+        console.log('📦 Respuesta del servidor:', response.data);
+      }
+      
+      alert(mensaje);
+      
+      // Redirigir según el modo
+      if (response.data.offline) {
+        console.log('🔄 Redirigiendo a /client/reservations para ver reservas locales');
+        navigate('/client/reservations'); // Mostrar reservas locales
+      } else {
+        navigate('/client/home');
+      }
+    } else {
+      console.error('❌ Error en la respuesta de la API:', response.data);
+      alert('Error al procesar la solicitud: ' + response.data.message);
+    }
+
+  } catch (error: any) {
+    console.error('❌ Error al realizar la reserva:', error);
+    console.error('📋 Detalles del error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    
+    setLoading(false);
+    
+    // Mostrar mensaje de error específico
+    if (error.response) {
+      if (error.response.status === 401) {
+        alert('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+        navigate('/login');
+      } else if (error.response.data?.message) {
+        alert('Error: ' + error.response.data.message);
+      } else {
+        alert('Error al procesar la reserva. Intenta nuevamente.');
+      }
+    } else {
+      alert('Error de conexión. Verifica tu internet e intenta nuevamente.');
+    }
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('userId');
     setUser(null);
     setUserMenuOpen(false);
     navigate('/login');
   };
 
+  const handleManualSync = async () => {
+    try {
+      alert('Iniciando sincronización...');
+      await reservationApi.syncOfflineData();
+      alert('Sincronización completada');
+      await checkPendingOperations();
+    } catch (error) {
+      console.error('Error en sincronización:', error);
+      alert('Error en sincronización. Por favor, inténtalo nuevamente.');
+    }
+  };
+
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Fecha no disponible';
+      return date.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Fecha inválida';
+    }
   };
 
   const tiposEvento = [
@@ -347,12 +451,57 @@ const ReservationClient: React.FC = () => {
         </div>
       </header>
 
+      {/* Banner de modo offline */}
+      {showOfflineBanner && (
+        <div className="offline-banner">
+          <div className="offline-content">
+            <span className="material-symbols-outlined">wifi_off</span>
+            <div className="offline-text">
+              <strong>Modo offline activado</strong>
+              <span>Puedes crear reservas que se guardarán localmente y se sincronizarán automáticamente cuando haya conexión.</span>
+            </div>
+            {pendingSync > 0 && navigator.onLine && (
+              <button onClick={handleManualSync} className="offline-sync-btn">
+                <span className="material-symbols-outlined">sync</span>
+                Sincronizar ahora
+              </button>
+            )}
+            <button 
+              onClick={() => setShowOfflineBanner(false)}
+              className="offline-close-btn"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="reservation-main">
         <div className="reservation-container">
           <div className="page-heading">
-            <h1>
-              {esVisita ? 'Solicitar Visita' : 'Confirmación de Reserva'}
-            </h1>
+            <div className="heading-content">
+              <h1>
+                {esVisita ? 'Solicitar Visita' : 'Confirmación de Reserva'}
+              </h1>
+              <div className="heading-actions">
+                {offlineMode && (
+                  <div className="offline-indicator-small">
+                    <span className="material-symbols-outlined"></span>
+                    <span>Modo offline</span>
+                  </div>
+                )}
+                {pendingSync > 0 && (
+                  <button 
+                    onClick={handleManualSync}
+                    className="sync-button"
+                    title="Sincronizar operaciones pendientes"
+                  >
+                    <span className="material-symbols-outlined">sync</span>
+                    <span className="sync-badge">{pendingSync}</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="content-wrapper">
@@ -368,6 +517,12 @@ const ReservationClient: React.FC = () => {
                     <span className={`badge ${esVisita ? 'badge-visita' : 'badge-reserva'}`}>
                       {esVisita ? 'Visita' : 'RESERVA'}
                     </span>
+                    {offlineMode && (
+                      <span className="badge-offline">
+                        <span className="material-symbols-outlined"></span>
+                        Offline
+                      </span>
+                    )}
                   </div>
                 </div>
                 {!esVisita && (
@@ -398,18 +553,18 @@ const ReservationClient: React.FC = () => {
               {!esVisita && (
                 <div className="owner-info-card">
                   <h3 className="owner-info-title">
-                    <span className="material-symbols-outlined">info</span>
+                    <span className="material-symbols-outlined"></span>
                     Información del Propietario
                   </h3>
                   <div className="owner-details">
                     <div className="owner-name">{propietario?.nombre || 'pedro'}</div>
                     <div className="owner-contact">
                       <div className="contact-item">
-                        <span className="material-symbols-outlined">mail</span>
+                        <span className="material-symbols-outlined">Correo</span>
                         <span>{propietario?.email || 'pedro@example.com'}</span>
                       </div>
                       <div className="contact-item">
-                        <span className="material-symbols-outlined">phone</span>
+                        <span className="material-symbols-outlined">Telefono</span>
                         <span>{propietario?.phone || '+52 123 456 7890'}</span>
                       </div>
                     </div>
@@ -588,6 +743,12 @@ const ReservationClient: React.FC = () => {
                     </div>
                     <div className="visit-note">
                       <p>La visita es sin costo. El propietario se pondrá en contacto contigo para coordinar los detalles.</p>
+                      {offlineMode && (
+                        <div className="offline-note">
+                          <span className="material-symbols-outlined">cloud_off</span>
+                          <p>Esta solicitud se guardará localmente y se sincronizará automáticamente cuando haya conexión.</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -597,20 +758,31 @@ const ReservationClient: React.FC = () => {
                   </div>
 
                   <button
-                    className="confirm-button"
+                    className={`confirm-button ${offlineMode ? 'offline-mode' : ''}`}
                     onClick={handleSubmit}
                     disabled={loading}
                   >
                     {loading ? (
                       <>
                         <span className="spinner-small"></span>
-                        Procesando...
+                        {offlineMode ? 'Guardando localmente...' : 'Procesando...'}
+                      </>
+                    ) : offlineMode ? (
+                      <>
+                        <span className="material-symbols-outlined"></span>
+                        Guardar localmente
                       </>
                     ) : 'Solicitar Visita'}
                   </button>
 
                   <div className="terms-notice">
                     <p>Al confirmar, aceptas nuestros <a href="/terminos-de-servicio" className="terms-link">Términos de Servicio</a> y <a href="/politica-cancelacion" className="terms-link">Política de Cancelación</a>.</p>
+                    {offlineMode && (
+                      <p className="offline-notice">
+                        <span className="material-symbols-outlined"></span>
+                        La solicitud se sincronizará automáticamente cuando se restablezca la conexión.
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -622,29 +794,46 @@ const ReservationClient: React.FC = () => {
 
                   <div className="payment-info-card">
                     <div className="payment-info-title">
-                      <span className="material-symbols-outlined">info</span>
+                      <span className="material-symbols-outlined"></span>
                       Información importante:
                     </div>
                     <p className="payment-info-text">
                       El pago se realizará directamente con el propietario. Esta es una solicitud de reserva.
+                      {offlineMode && (
+                        <>
+                          <br /><br />
+                          <strong>Modo offline:</strong> Esta reserva se guardará localmente y se sincronizará automáticamente cuando haya conexión.
+                        </>
+                      )}
                     </p>
                   </div>
 
                   <button
-                    className="confirm-button"
+                    className={`confirm-button ${offlineMode ? 'offline-mode' : ''}`}
                     onClick={handleSubmit}
                     disabled={loading}
                   >
                     {loading ? (
                       <>
                         <span className="spinner-small"></span>
-                        Procesando...
+                        {offlineMode ? 'Guardando localmente...' : 'Procesando...'}
+                      </>
+                    ) : offlineMode ? (
+                      <>
+                        <span className="material-symbols-outlined"></span>
+                        Guardar localmente
                       </>
                     ) : 'Confirmar Reserva'}
                   </button>
 
                   <div className="terms-notice">
                     <p>Al confirmar, aceptas nuestros <a href="/terminos-de-servicio" className="terms-link">Términos de Servicio</a> y <a href="/politica-cancelacion" className="terms-link">Política de Cancelación</a>.</p>
+                    {offlineMode && (
+                      <p className="offline-notice">
+                        <span className="material-symbols-outlined"></span>
+                        La reserva se sincronizará automáticamente cuando se restablezca la conexión.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -657,6 +846,3 @@ const ReservationClient: React.FC = () => {
 };
 
 export default ReservationClient;
-
-
-//----------------------------BIEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEN--------------------------
