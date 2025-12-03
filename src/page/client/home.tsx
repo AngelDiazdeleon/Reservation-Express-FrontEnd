@@ -1,27 +1,64 @@
+// frontend/src/pages/client/Home.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom'; // Cambia a Link
 import "../css/clientcss/home.css";
+import api from '../../api';
 
-const TerrazaApp = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [fecha, setFecha] = useState('');
-  const [invitados, setInvitados] = useState('');
-  const [precioMin, setPrecioMin] = useState('');
-  const [precioMax, setPrecioMax] = useState('');
-  const [calificacionMin, setCalificacionMin] = useState('');
-  const [ubicacion, setUbicacion] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('todos');
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [terrazas, setTerrazas] = useState([]);
+// Definir tipos TypeScript
+interface Terraza {
+  id: string;
+  nombre: string;
+  ubicacion: string;
+  precio: number;
+  calificacion: number;
+  capacidad: number;
+  imagen: string;
+  categoria: string;
+  descripcion: string;
+  amenities: string[];
+  contacto: {
+    telefono?: string;
+    email?: string;
+  };
+  propietario: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Notification {
+  id: number;
+  message: string;
+  time: string;
+  read: boolean;
+  type: string;
+}
+
+const Home: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [fecha, setFecha] = useState<string>('');
+  const [invitados, setInvitados] = useState<string>('');
+  const [precioMin, setPrecioMin] = useState<string>('');
+  const [precioMax, setPrecioMax] = useState<string>('');
+  const [calificacionMin, setCalificacionMin] = useState<string>('');
+  const [ubicacion, setUbicacion] = useState<string>('');
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [userMenuOpen, setUserMenuOpen] = useState<boolean>(false);
+  const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
+  const [activeFilter, setActiveFilter] = useState<string>('todos');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [terrazas, setTerrazas] = useState<Terraza[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
-  const userMenuRef = useRef(null);
-  const notificationsRef = useRef(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Notificaciones de ejemplo
-  const [notifications, setNotifications] = useState([
+  const [notifications] = useState<Notification[]>([
     { 
       id: 1, 
       message: 'Tu reserva en "Terraza Panorámica" ha sido confirmada', 
@@ -59,39 +96,59 @@ const TerrazaApp = () => {
   }, []);
 
   // Función para cargar todas las terrazas aprobadas desde la API
-  const loadAllTerrazas = async () => {
+  const loadAllTerrazas = async (): Promise<void> => {
     try {
       setLoading(true);
+      setError(null);
       console.log('📡 Cargando terrazas aprobadas...');
       
-      const response = await fetch('http://localhost:4000/api/publication-requests/public/approved', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await api.get('/publication-requests/public/approved');
       
-      const data = await response.json();
-      
-      if (data.success) {
-        console.log('✅ Terrazas cargadas:', data.data);
-        setTerrazas(data.data);
+      if (response.data.success) {
+        console.log('✅ Terrazas cargadas:', response.data.data.length);
+        console.log('📊 Datos de terrazas:', response.data.data);
+        
+        // Verificar que las terrazas tengan IDs
+        const terrazasConIds = response.data.data.map((terraza: any, index: number) => {
+          // Asegurar que cada terraza tenga un ID válido
+          const terrazaId = terraza.id || terraza._id || `temp-${index}`;
+          console.log(`Terraza ${index}: ID=${terrazaId}, Nombre=${terraza.nombre}`);
+          
+          return {
+            ...terraza,
+            id: terrazaId,
+            imagen: terraza.imagen || getDefaultImage()
+          };
+        });
+        
+        setTerrazas(terrazasConIds);
       } else {
-        console.error('❌ Error cargando terrazas:', data.message);
-        // Usar datos de ejemplo si la API falla
+        console.error('❌ Error cargando terrazas:', response.data.message);
+        setError('No se pudieron cargar las terrazas');
         setTerrazas(getTerrazasEjemplo());
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Error al cargar terrazas:', error);
-      // Usar datos de ejemplo si hay error de conexión
+      setError('Error de conexión con el servidor');
       setTerrazas(getTerrazasEjemplo());
     } finally {
       setLoading(false);
     }
   };
 
+  // Imagen por defecto
+  const getDefaultImage = (): string => {
+    return "https://images.unsplash.com/photo-1549294413-26f195200c16?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80";
+  };
+
+  // Función para manejar errores de imágenes
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>): void => {
+    console.log('🖼️ Error cargando imagen, usando fallback');
+    e.currentTarget.src = getDefaultImage();
+  };
+
   // Función para cargar datos del usuario
-  const loadUserData = () => {
+  const loadUserData = (): void => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
@@ -106,9 +163,9 @@ const TerrazaApp = () => {
   };
 
   // Datos de ejemplo por si falla la API
-  const getTerrazasEjemplo = () => [
+  const getTerrazasEjemplo = (): Terraza[] => [
     {
-      id: '1',
+      id: '65a1b2c3d4e5f6a7b8c9d0e1',
       nombre: "Terraza del Sol",
       ubicacion: "Colonia Roma Norte, CDMX",
       precio: 5000,
@@ -116,10 +173,13 @@ const TerrazaApp = () => {
       capacidad: 50,
       imagen: "https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=600&h=400&fit=crop",
       categoria: "popular",
-      descripcion: "Amplia terraza con vista panorámica al atardecer"
+      descripcion: "Amplia terraza con vista panorámica al atardecer",
+      amenities: [],
+      contacto: {},
+      propietario: "Anfitrión"
     },
     {
-      id: '2',
+      id: '65a1b2c3d4e5f6a7b8c9d0e2',
       nombre: "Jardín Secreto",
       ubicacion: "Polanco, CDMX",
       precio: 8000,
@@ -127,10 +187,13 @@ const TerrazaApp = () => {
       capacidad: 30,
       imagen: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=600&h=400&fit=crop",
       categoria: "lujo",
-      descripcion: "Elegante terraza con jardín privado y fuentes"
+      descripcion: "Elegante terraza con jardín privado y fuentes",
+      amenities: [],
+      contacto: {},
+      propietario: "Anfitrión"
     },
     {
-      id: '3',
+      id: '65a1b2c3d4e5f6a7b8c9d0e3',
       nombre: "Rooftop Panorámico",
       ubicacion: "Condesa, CDMX",
       precio: 6500,
@@ -138,17 +201,20 @@ const TerrazaApp = () => {
       capacidad: 40,
       imagen: "https://images.unsplash.com/photo-1564013797767-2f7b0eb10aac?w=600&h=400&fit=crop",
       categoria: "moderno",
-      descripcion: "Terraza moderna con vista espectacular de la ciudad"
+      descripcion: "Terraza moderna con vista espectacular de la ciudad",
+      amenities: [],
+      contacto: {},
+      propietario: "Anfitrión"
     }
   ];
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
         setNotificationsOpen(false);
       }
     };
@@ -160,32 +226,11 @@ const TerrazaApp = () => {
   }, []);
 
   // Función para cerrar sesión
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
     window.location.href = '/login';
-  };
-
-  // Funciones para manejar notificaciones
-  const markNotificationAsRead = (id) => {
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? { ...notif, read: true } : notif
-    ));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notif => ({ ...notif, read: true })));
-  };
-
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case 'reserva': return 'event_available';
-      case 'mensaje': return 'message';
-      case 'recordatorio': return 'notification_important';
-      case 'promocion': return 'local_offer';
-      default: return 'notifications';
-    }
   };
 
   const unreadNotifications = notifications.filter(notif => !notif.read).length;
@@ -203,19 +248,19 @@ const TerrazaApp = () => {
     
     const matchPrecioMin = 
       precioMin === '' || 
-      terraza.precio >= parseInt(precioMin);
+      terraza.precio >= parseInt(precioMin) || 0;
     
     const matchPrecioMax = 
       precioMax === '' || 
-      terraza.precio <= parseInt(precioMax);
+      terraza.precio <= parseInt(precioMax) || Infinity;
     
     const matchCalificacion = 
       calificacionMin === '' || 
-      terraza.calificacion >= parseFloat(calificacionMin);
+      terraza.calificacion >= parseFloat(calificacionMin) || 0;
     
     const matchInvitados = 
       invitados === '' || 
-      terraza.capacidad >= parseInt(invitados);
+      terraza.capacidad >= parseInt(invitados) || 0;
     
     const matchCategoria = 
       activeFilter === 'todos' || 
@@ -225,7 +270,7 @@ const TerrazaApp = () => {
            matchPrecioMax && matchCalificacion && matchInvitados && matchCategoria;
   });
 
-  const limpiarFiltros = () => {
+  const limpiarFiltros = (): void => {
     setSearchQuery('');
     setFecha('');
     setInvitados('');
@@ -245,20 +290,8 @@ const TerrazaApp = () => {
     { id: 'bohemio', nombre: 'Bohemias', icono: '' }
   ];
 
-  // Función para manejar reserva
-  const handleReservar = (terrazaId) => {
-    if (!user) {
-      // Redirigir al login si no está autenticado
-      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
-      return;
-    }
-    
-    // Redirigir a la página de reserva
-    window.location.href = `/reserva/${terrazaId}`;
-  };
-
   // Función para manejar favoritos
-  const handleFavorite = (terrazaId, event) => {
+  const handleFavorite = (terrazaId: string, event: React.MouseEvent): void => {
     event.preventDefault();
     event.stopPropagation();
     
@@ -267,7 +300,6 @@ const TerrazaApp = () => {
       return;
     }
     
-    // Aquí puedes implementar la lógica para agregar a favoritos
     console.log('Agregar a favoritos:', terrazaId);
   };
 
@@ -279,66 +311,26 @@ const TerrazaApp = () => {
           <div className="logo-section">
             <div className="logo">
               <span className="material-symbols-outlined">terrace</span>
-              <h1>TerrazaApp</h1>
+              <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <h1>TerrazaApp</h1>
+              </Link>
             </div>
           </div>
           
           <nav className="nav-section">
             <div className="nav-links">
-              <a className="nav-link" href="#explorar">Explorar</a>
-              <a className="nav-link" href="#reservaciones">Reservaciones</a>
+              <a className="nav-link" href="/client/home">Explorar</a>
+              <a className="nav-link" href="/client/MyResarvation">Reservaciones</a>
             </div>
             
             <div className="user-section" ref={userMenuRef}>
-              {/* Notificaciones */}
-              <div className="notification-container" ref={notificationsRef}>
-                <button 
-                  className="icon-btn notification-btn"
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                >
-                  <span className="material-symbols-outlined">notifications</span>
-                  {unreadNotifications > 0 && (
-                    <span className="notification-badge">{unreadNotifications}</span>
-                  )}
-                </button>
-                
-                {notificationsOpen && (
-                  <div className="notification-dropdown">
-                    <div className="notification-header">
-                      <h3>Notificaciones</h3>
-                      {unreadNotifications > 0 && (
-                        <button className="mark-all-read" onClick={markAllAsRead}>
-                          Marcar todas como leídas
-                        </button>
-                      )}
-                    </div>
-                    <div className="notification-list">
-                      {notifications.map(notification => (
-                        <div 
-                          key={notification.id} 
-                          className={`notification-item ${notification.read ? '' : 'unread'}`}
-                          onClick={() => markNotificationAsRead(notification.id)}
-                        >
-                          <div className="notification-icon">
-                            <span className="material-symbols-outlined">
-                              {getNotificationIcon(notification.type)}
-                            </span>
-                          </div>
-                          <div className="notification-content">
-                            <p className="notification-message">{notification.message}</p>
-                            <span className="notification-time">{notification.time}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
               {user ? (
                 <div 
                   className="user-profile"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyPress={(e) => e.key === 'Enter' && setUserMenuOpen(!userMenuOpen)}
                 >
                   <div className="avatar">
                     <span>{user.name ? user.name.charAt(0) : 'U'}</span>
@@ -359,7 +351,7 @@ const TerrazaApp = () => {
                         Configuración
                       </a>
                       <div className="dropdown-divider"></div>
-                      <button className="dropdown-item" onClick={handleLogout}>
+                      <button className="dropdown-item" onClick={handleLogout} type="button">
                         <span className="material-symbols-outlined">logout</span>
                         Cerrar Sesión
                       </button>
@@ -408,11 +400,18 @@ const TerrazaApp = () => {
             
             <div className="hero-cards">
               {terrazas.slice(0, 3).map((terraza, index) => (
-                <div key={terraza.id} className={`floating-card card-${index + 1}`}>
-                  <div 
+                <Link 
+                  key={terraza.id} 
+                  to={`/client/terraceDetail/${terraza.id}`}
+                  className={`floating-card card-${index + 1}`}
+                  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                >
+                  <img 
+                    src={terraza.imagen} 
+                    alt={terraza.nombre}
+                    onError={handleImageError}
                     className="card-image"
-                    style={{backgroundImage: `url(${terraza.imagen})`}}
-                  ></div>
+                  />
                   <div className="card-content">
                     <h4>{terraza.nombre}</h4>
                     <div className="card-rating">
@@ -420,7 +419,7 @@ const TerrazaApp = () => {
                       <span>{terraza.calificacion}</span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -446,6 +445,7 @@ const TerrazaApp = () => {
               <button 
                 className={`filter-btn ${showFilters ? 'active' : ''}`}
                 onClick={() => setShowFilters(!showFilters)}
+                type="button"
               >
                 <span className="material-symbols-outlined">filter_list</span>
                 Filtros
@@ -461,6 +461,7 @@ const TerrazaApp = () => {
                   key={categoria.id}
                   className={`category-btn ${activeFilter === categoria.id ? 'active' : ''}`}
                   onClick={() => setActiveFilter(categoria.id)}
+                  type="button"
                 >
                   {categoria.nombre}
                 </button>
@@ -473,7 +474,7 @@ const TerrazaApp = () => {
             <div className="advanced-filters">
               <div className="filters-header">
                 <h3>Filtros Avanzados</h3>
-                <button className="clear-filters" onClick={limpiarFiltros}>
+                <button className="clear-filters" onClick={limpiarFiltros} type="button">
                   <span className="material-symbols-outlined">clear_all</span>
                   Limpiar Filtros
                 </button>
@@ -502,6 +503,7 @@ const TerrazaApp = () => {
                       placeholder="Mínimo"
                       value={precioMin}
                       onChange={(e) => setPrecioMin(e.target.value)}
+                      min="0"
                     />
                   </div>
                 </div>
@@ -515,6 +517,7 @@ const TerrazaApp = () => {
                       placeholder="Máximo"
                       value={precioMax}
                       onChange={(e) => setPrecioMax(e.target.value)}
+                      min="0"
                     />
                   </div>
                 </div>
@@ -544,6 +547,7 @@ const TerrazaApp = () => {
                       placeholder="Mínimo de invitados"
                       value={invitados}
                       onChange={(e) => setInvitados(e.target.value)}
+                      min="1"
                     />
                   </div>
                 </div>
@@ -576,17 +580,18 @@ const TerrazaApp = () => {
                   ? `${terrazasFiltradas.length} terrazas encontradas` 
                   : 'No se encontraron terrazas'}
               </h2>
+              {error && <p className="error-message">{error}</p>}
               <p>Descubre el lugar perfecto para tu evento</p>
             </div>
             
             {terrazasFiltradas.length > 0 && (
               <div className="sort-options">
                 <span>Ordenar por:</span>
-                <select className="sort-select">
-                  <option>Recomendados</option>
-                  <option>Precio: menor a mayor</option>
-                  <option>Precio: mayor a menor</option>
-                  <option>Mejor calificadas</option>
+                <select className="sort-select" onChange={(e) => console.log('Ordenar por:', e.target.value)}>
+                  <option value="recomendados">Recomendados</option>
+                  <option value="precio-asc">Precio: menor a mayor</option>
+                  <option value="precio-desc">Precio: mayor a menor</option>
+                  <option value="calificacion">Mejor calificadas</option>
                 </select>
               </div>
             )}
@@ -604,15 +609,22 @@ const TerrazaApp = () => {
           {!loading && (
             <div className="terraza-grid">
               {terrazasFiltradas.map(terraza => (
-                <div key={terraza.id} className="terraza-card">
+                <div 
+                  key={terraza.id} 
+                  className="terraza-card"
+                >
                   <div className="card-image-section">
-                    <div 
+                    <img 
+                      src={terraza.imagen} 
+                      alt={terraza.nombre}
+                      onError={handleImageError}
                       className="card-image"
-                      style={{backgroundImage: `url(${terraza.imagen})`}}
-                    ></div>
+                    />
                     <button 
                       className="favorite-btn"
                       onClick={(e) => handleFavorite(terraza.id, e)}
+                      type="button"
+                      aria-label="Agregar a favoritos"
                     >
                       <span className="material-symbols-outlined">favorite</span>
                     </button>
@@ -647,13 +659,16 @@ const TerrazaApp = () => {
                         <span className="price-amount">${terraza.precio.toLocaleString()}</span>
                         <span className="price-label"> / evento</span>
                       </div>
-                      <button 
-                        className="reserve-btn"
-                        onClick={() => handleReservar(terraza.id)}
-                      >
-                        <span className="material-symbols-outlined">event_available</span>
-                        Reservar
-                      </button>
+                      {/* CAMBIO AQUÍ: Usa Link en lugar de <a> */}
+                      <Link to={`/client/terraceDetail/${terraza.id}`}>
+                        <button 
+                          className="reserve-btn"
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined">event_available</span>
+                          Reservar
+                        </button>
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -669,7 +684,7 @@ const TerrazaApp = () => {
               </div>
               <h3>No se encontraron terrazas</h3>
               <p>Intenta ajustar tus filtros de búsqueda</p>
-              <button className="clear-filters-btn" onClick={limpiarFiltros}>
+              <button className="clear-filters-btn" onClick={limpiarFiltros} type="button">
                 Limpiar todos los filtros
               </button>
             </div>
@@ -693,15 +708,15 @@ const TerrazaApp = () => {
               <h4>Enlaces Rápidos</h4>
               <a href="#explorar">Explorar Terrazas</a>
               <a href="/host/dashboard">Publicar Terraza</a>
-              <a href="#ayuda">Centro de Ayuda</a>
-              <a href="#contacto">Contacto</a>
+              <a href="/client/ayuda">Centro de Ayuda</a>
+              <a href="/contacto">Contacto</a>
             </div>
             
             <div className="footer-section">
               <h4>Legal</h4>
-              <a href="#privacidad">Política de Privacidad</a>
-              <a href="#terminos">Términos de Servicio</a>
-              <a href="#cookies">Política de Cookies</a>
+              <a href="/privacidad">Política de Privacidad</a>
+              <a href="/terminos">Términos de Servicio</a>
+              <a href="/cookies">Política de Cookies</a>
             </div>
             
             <div className="footer-section">
@@ -709,9 +724,9 @@ const TerrazaApp = () => {
               <p>contacto@terrazaapp.com</p>
               <p>+52 55 1234 5678</p>
               <div className="social-links">
-                <a href="#" aria-label="Facebook">📘</a>
-                <a href="#" aria-label="Instagram">📷</a>
-                <a href="#" aria-label="Twitter">🐦</a>
+                <a href="https://facebook.com" aria-label="Facebook" target="_blank" rel="noopener noreferrer">📘</a>
+                <a href="https://instagram.com" aria-label="Instagram" target="_blank" rel="noopener noreferrer">📷</a>
+                <a href="https://twitter.com" aria-label="Twitter" target="_blank" rel="noopener noreferrer">🐦</a>
               </div>
             </div>
           </div>
@@ -725,4 +740,4 @@ const TerrazaApp = () => {
   );
 };
 
-export default TerrazaApp;
+export default Home;

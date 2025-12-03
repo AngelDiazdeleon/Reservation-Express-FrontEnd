@@ -728,7 +728,7 @@ const PublicarTerraza = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="pt-form-group">
+                  {/* <div className="pt-form-group">
                     <label className="pt-label">
                       Características principales
                     </label>
@@ -756,7 +756,7 @@ const PublicarTerraza = () => {
                         </span>
                       ))}
                     </div>
-                  </div>
+                  </div> */}
                   <div className="pt-form-group">
                     <label className="pt-label" htmlFor="telefonoContacto">
                       Teléfono de contacto *
