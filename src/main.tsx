@@ -19,10 +19,10 @@ import MisTerrazas from './page/host/MyTerraces';
 import PublicarTerraza from './page/host/addTerrace';
 import MembershipPlans from './page/host/MembershipPlans';
 // ---------PAGINAS DE ADMIN--------------
-// import AdminDashboard from './page/admin/Dashboard';
+import AdminDashboard from './page/admin/Dashboard';
 import AdminProfile from './page/admin/Profile';
-import AdminPermission from './page/admin/PermissionPanel';
-
+import AdminPermission from './page/admin/PermissionManagement';
+import AdminRegister from './page/admin/RegisterAdmin';
 
 // Rutas protegidas
 import ProtectedRoute from './routers/ProtectedRoute';
@@ -105,16 +105,24 @@ createRoot(document.getElementById('root')!).render(
        
 {/* -------------------------------------ADMINISTRADORES DE LA PWA-------------------------------------------------------------------------------------- */}
         {/* Admin */}
-        {/* <Route
+         <Route
           path="/admin/dashboard"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
             </ProtectedRoute>
           }
-        /> */}
+        /> 
+         <Route
+          path="/admin/RegisterAdmin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminRegister />
+            </ProtectedRoute>
+          }
+        /> 
         <Route
-          path="/admin/Profile"
+          path="/admin/profile"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminProfile/>
@@ -122,7 +130,7 @@ createRoot(document.getElementById('root')!).render(
           }
         />
         <Route
-          path="/admin/PermissionPanel"
+          path="/admin/PermissionMagement"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminPermission/>
