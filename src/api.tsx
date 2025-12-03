@@ -285,4 +285,27 @@ createReservation: async (data: any) => {
   }
 };
 
+// ------------------------------------------------------------
+// Funciones específicas para host
+export const hostApi = {
+  // Obtener reservas para host
+  getHostReservations: async () => {
+    return api.get('/reservations/host/reservations');
+  },
+
+  // Aprobar reserva
+  approveReservation: async (id: string) => {
+    return api.put(`/reservations/${id}/approve`);
+  },
+
+  // Rechazar reserva
+  rejectReservation: async (id: string) => {
+    return api.put(`/reservations/${id}/reject`);
+  },
+
+  // Verificar conexión
+  isOnline: () => {
+    return navigator.onLine;
+  }
+};
 export default api;

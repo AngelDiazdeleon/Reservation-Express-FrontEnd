@@ -283,11 +283,11 @@ const Home: React.FC = () => {
 
   const categorias = [
     { id: 'todos', nombre: 'Todas', icono: '' },
-    { id: 'popular', nombre: 'Populares', icono: '' },
+    { id: 'popular', nombre: 'Economicas', icono: '' },
     { id: 'lujo', nombre: 'Lujo', icono: '' },
     { id: 'moderno', nombre: 'Modernas', icono: '' },
-    { id: 'rustico', nombre: 'Rústicas', icono: '' },
-    { id: 'bohemio', nombre: 'Bohemias', icono: '' }
+    // { id: 'rustico', nombre: 'Rústicas', icono: '' },
+    // { id: 'bohemio', nombre: 'Bohemias', icono: '' }
   ];
 
   // Función para manejar favoritos
@@ -310,9 +310,9 @@ const Home: React.FC = () => {
         <div className="header-container">
           <div className="logo-section">
             <div className="logo">
-              <span className="material-symbols-outlined">terrace</span>
+              <span className="material-symbols-outlined">Reservation</span>
               <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <h1>TerrazaApp</h1>
+                <h1>Express</h1>
               </Link>
             </div>
           </div>
@@ -340,19 +340,12 @@ const Home: React.FC = () => {
                   {userMenuOpen && (
                     <div className="user-dropdown">
                       <a className="dropdown-item" href="/client/profile">
-                        <span className="material-symbols-outlined">person</span>
+                        <span className="material-symbols-outlined"></span>
                         Mi Perfil
-                      </a>
-                      <a 
-                        className="dropdown-item" 
-                        href="/client/profile#configuracion"
-                      >
-                        <span className="material-symbols-outlined">settings</span>
-                        Configuración
                       </a>
                       <div className="dropdown-divider"></div>
                       <button className="dropdown-item" onClick={handleLogout} type="button">
-                        <span className="material-symbols-outlined">logout</span>
+                        <span className="material-symbols-outlined"></span>
                         Cerrar Sesión
                       </button>
                     </div>
@@ -379,7 +372,7 @@ const Home: React.FC = () => {
               </h1>
               <p className="hero-description">
                 Explora, compara y reserva el lugar ideal para tu próxima celebración. 
-                {terrazas.length}+ terrazas disponibles en la CDMX.
+                {terrazas.length}+ terrazas disponibles.
               </p>
               
               <div className="hero-stats">
@@ -415,7 +408,7 @@ const Home: React.FC = () => {
                   <div className="card-content">
                     <h4>{terraza.nombre}</h4>
                     <div className="card-rating">
-                      <span className="material-symbols-outlined">star</span>
+                      <span className="material-symbols-outlined">Valoración</span>
                       <span>{terraza.calificacion}</span>
                     </div>
                   </div>
@@ -431,7 +424,7 @@ const Home: React.FC = () => {
         <div className="search-container">
           <div className="search-bar">
             <div className="search-input-container">
-              <span className="material-symbols-outlined search-icon">search</span>
+              <span className="material-symbols-outlined search-icon"></span>
               <input
                 type="text"
                 className="search-input"
@@ -447,7 +440,7 @@ const Home: React.FC = () => {
                 onClick={() => setShowFilters(!showFilters)}
                 type="button"
               >
-                <span className="material-symbols-outlined">filter_list</span>
+                <span className="material-symbols-outlined"></span>
                 Filtros
               </button>
             </div>
@@ -475,7 +468,7 @@ const Home: React.FC = () => {
               <div className="filters-header">
                 <h3>Filtros Avanzados</h3>
                 <button className="clear-filters" onClick={limpiarFiltros} type="button">
-                  <span className="material-symbols-outlined">clear_all</span>
+                  <span className="material-symbols-outlined"></span>
                   Limpiar Filtros
                 </button>
               </div>
@@ -484,7 +477,7 @@ const Home: React.FC = () => {
                 <div className="filter-field">
                   <label>Ubicación específica</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined">location_on</span>
+                    <span className="material-symbols-outlined"></span>
                     <input
                       type="text"
                       placeholder="Ej: Roma, Polanco..."
@@ -497,7 +490,7 @@ const Home: React.FC = () => {
                 <div className="filter-field">
                   <label>Precio mínimo</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined">attach_money</span>
+                    <span className="material-symbols-outlined"></span>
                     <input
                       type="number"
                       placeholder="Mínimo"
@@ -511,7 +504,7 @@ const Home: React.FC = () => {
                 <div className="filter-field">
                   <label>Precio máximo</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined">attach_money</span>
+                    <span className="material-symbols-outlined"></span>
                     <input
                       type="number"
                       placeholder="Máximo"
@@ -525,7 +518,7 @@ const Home: React.FC = () => {
                 <div className="filter-field">
                   <label>Calificación mínima</label>
                   <div className="input-with-icon">
-                    <span className="material-symbols-outlined">star</span>
+                    <span className="material-symbols-outlined"></span>
                     <select
                       value={calificacionMin}
                       onChange={(e) => setCalificacionMin(e.target.value)}
@@ -535,32 +528,6 @@ const Home: React.FC = () => {
                       <option value="4.0">4.0+ Estrellas</option>
                       <option value="3.5">3.5+ Estrellas</option>
                     </select>
-                  </div>
-                </div>
-
-                <div className="filter-field">
-                  <label>Número de invitados</label>
-                  <div className="input-with-icon">
-                    <span className="material-symbols-outlined">group</span>
-                    <input
-                      type="number"
-                      placeholder="Mínimo de invitados"
-                      value={invitados}
-                      onChange={(e) => setInvitados(e.target.value)}
-                      min="1"
-                    />
-                  </div>
-                </div>
-
-                <div className="filter-field">
-                  <label>Fecha del evento</label>
-                  <div className="input-with-icon">
-                    <span className="material-symbols-outlined">calendar_today</span>
-                    <input
-                      type="date"
-                      value={fecha}
-                      onChange={(e) => setFecha(e.target.value)}
-                    />
                   </div>
                 </div>
               </div>
@@ -620,14 +587,6 @@ const Home: React.FC = () => {
                       onError={handleImageError}
                       className="card-image"
                     />
-                    <button 
-                      className="favorite-btn"
-                      onClick={(e) => handleFavorite(terraza.id, e)}
-                      type="button"
-                      aria-label="Agregar a favoritos"
-                    >
-                      <span className="material-symbols-outlined">favorite</span>
-                    </button>
                     <div className="card-badge">{terraza.categoria}</div>
                   </div>
                   
@@ -635,13 +594,13 @@ const Home: React.FC = () => {
                     <div className="card-header">
                       <h3 className="card-title">{terraza.nombre}</h3>
                       <div className="rating">
-                        <span className="material-symbols-outlined">star</span>
+                        <span className="material-symbols-outlined">Valoración</span>
                         <span className="rating-value">{terraza.calificacion}</span>
                       </div>
                     </div>
                     
                     <div className="card-location">
-                      <span className="material-symbols-outlined">location_on</span>
+                      <span className="material-symbols-outlined">Localización</span>
                       {terraza.ubicacion}
                     </div>
                     
@@ -649,7 +608,7 @@ const Home: React.FC = () => {
                     
                     <div className="card-details">
                       <div className="detail">
-                        <span className="material-symbols-outlined">group</span>
+                        <span className="material-symbols-outlined">Personas</span>
                         <span>{terraza.capacidad} invitados</span>
                       </div>
                     </div>
@@ -665,8 +624,8 @@ const Home: React.FC = () => {
                           className="reserve-btn"
                           type="button"
                         >
-                          <span className="material-symbols-outlined">event_available</span>
-                          Reservar
+                          <span className="material-symbols-outlined">Reservar</span>
+                          
                         </button>
                       </Link>
                     </div>
@@ -680,7 +639,7 @@ const Home: React.FC = () => {
           {!loading && terrazasFiltradas.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon">
-                <span className="material-symbols-outlined">search_off</span>
+                <span className="material-symbols-outlined"></span>
               </div>
               <h3>No se encontraron terrazas</h3>
               <p>Intenta ajustar tus filtros de búsqueda</p>
@@ -698,18 +657,16 @@ const Home: React.FC = () => {
           <div className="footer-content">
             <div className="footer-section">
               <div className="footer-logo">
-                <span className="material-symbols-outlined">terrace</span>
-                <h3>TerrazaApp</h3>
+                <span className="material-symbols-outlined"></span>
+                <h3>Reservation Express</h3>
               </div>
               <p>La plataforma líder para encontrar y reservar terrazas para tus eventos especiales.</p>
             </div>
             
             <div className="footer-section">
               <h4>Enlaces Rápidos</h4>
-              <a href="#explorar">Explorar Terrazas</a>
-              <a href="/host/dashboard">Publicar Terraza</a>
-              <a href="/client/ayuda">Centro de Ayuda</a>
-              <a href="/contacto">Contacto</a>
+              <a href="/client/home">Explorar Terrazas</a>
+              <a href="/client/MyResarvation">Reservaciones</a>
             </div>
             
             <div className="footer-section">
@@ -721,8 +678,8 @@ const Home: React.FC = () => {
             
             <div className="footer-section">
               <h4>Contacto</h4>
-              <p>contacto@terrazaapp.com</p>
-              <p>+52 55 1234 5678</p>
+              <p>contacto@Reservation.com</p>
+              <p>+52 3333255511</p>
               <div className="social-links">
                 <a href="https://facebook.com" aria-label="Facebook" target="_blank" rel="noopener noreferrer">📘</a>
                 <a href="https://instagram.com" aria-label="Instagram" target="_blank" rel="noopener noreferrer">📷</a>
@@ -732,7 +689,7 @@ const Home: React.FC = () => {
           </div>
           
           <div className="footer-bottom">
-            <p>&copy; 2024 TerrazaApp. Todos los derechos reservados.</p>
+            <p>&copy; 2024 ReservationExpress. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

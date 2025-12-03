@@ -1346,19 +1346,19 @@ body {
   padding: 0.5rem 1rem;
   border: 1px solid #e0e0e0;
   border-radius: 20px;
-  background: white;
+  background: #2A9D8F;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .filter-btn.active {
-  background: #2196f3;
+  background: #62BEB2;
   color: white;
-  border-color: #2196f3;
+  border-color: #62BEB2;
 }
 
 .filter-btn:hover:not(.active) {
-  background: #f5f5f5;
+  background: #2A9D8F;
 }
 
 /* Acciones de documento mejoradas */

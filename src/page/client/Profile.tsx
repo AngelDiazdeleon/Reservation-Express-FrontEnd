@@ -250,15 +250,6 @@ const ClientProfile = () => {
             <div className="user-section" ref={userMenuRef}>
               {/* Notificaciones */}
               <div className="notification-container" ref={notificationsRef}>
-                <button 
-                  className="icon-btn notification-btn"
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                >
-                  <span className="material-symbols-outlined">🔔</span>
-                  {unreadNotifications > 0 && (
-                    <span className="notification-badge">{unreadNotifications}</span>
-                  )}
-                </button>
                 
                 {notificationsOpen && (
                   <div className="notification-dropdown">
@@ -309,18 +300,6 @@ const ClientProfile = () => {
                         <span className="material-symbols-outlined"></span>
                         Mi Perfil
                       </a>
-                      <a 
-                        className="dropdown-item" 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveTab('configuracion');
-                          setUserMenuOpen(false);
-                        }}
-                      >
-                        <span className="material-symbols-outlined"></span>
-                        Configuración
-                      </a>
                       <div className="dropdown-divider"></div>
                       <a className="dropdown-item" onClick={handleLogout}>
                         <span className="material-symbols-outlined"></span>
@@ -346,14 +325,6 @@ const ClientProfile = () => {
           {user ? (
             <div className="profile-header">
               <div className="profile-info">
-                <div className="avatar-container">
-                  <div className="profile-avatar">
-                    <span>{getInitial()}</span>
-                  </div>
-                  <button className="edit-avatar-btn">
-                    <span className="material-symbols-outlined">edit</span>
-                  </button>
-                </div>
                 <div className="profile-greeting">
                   <h1>¡Hola, {user.name}!</h1>
                   <p>Bienvenido de nuevo a tu perfil</p>
@@ -375,12 +346,6 @@ const ClientProfile = () => {
                 onClick={() => setActiveTab('informacion')}
               >
                 Información Personal
-              </button>
-              <button 
-                className={`tab ${activeTab === 'reservas' ? 'active' : ''}`}
-                onClick={() => setActiveTab('reservas')}
-              >
-                Mis Reservas
               </button>
               <button 
                 className={`tab ${activeTab === 'configuracion' ? 'active' : ''}`}

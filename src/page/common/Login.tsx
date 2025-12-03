@@ -134,7 +134,7 @@ const Login = () => {
               className="side-image"
             />
             <div className="image-overlay">
-              <h2>TerrazaPerfecta</h2>
+              <h2>Reservation Express</h2>
               <p>Descubre el lugar ideal para tus eventos especiales</p>
             </div>
           </div>
@@ -143,7 +143,7 @@ const Login = () => {
         {/* Formulario */}
         <div className="login-card">
           <div className="login-header">
-            <h1 className="login-title">TerrazaPerfecta</h1>
+            <h1 className="login-title">Reservation Express</h1>
             <p className="login-subtitle">El lugar perfecto para tu próximo evento</p>
             
             <div className="login-tabs">
@@ -292,7 +292,7 @@ const Login = () => {
             </button>
 
             {/* Enlaces adicionales */}
-            <div className="form-links">
+            {/* <div className="form-links">
               {isLogin ? (
                 <>
                   <a href="#" className="forgot-password">¿Olvidaste tu contraseña?</a>
@@ -310,15 +310,15 @@ const Login = () => {
                   </p>
                 </>
               )}
-            </div>
+            </div> */}
 
             {/* Separador */}
-            <div className="separator">
+            {/* <div className="separator">
               <span>o {isLogin ? 'inicia sesión' : 'regístrate'} con</span>
-            </div>
+            </div> */}
 
             {/* Botones sociales */}
-            <div className="social-buttons">
+            {/* <div className="social-buttons">
               <button
                 type="button"
                 onClick={() => handleSocialLogin("google")}
@@ -335,7 +335,7 @@ const Login = () => {
                 <span className="social-icon">f</span>
                 Facebook
               </button>
-            </div>
+            </div> */}
           </form>
         </div>
       </div>

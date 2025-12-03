@@ -279,7 +279,7 @@ const ClientProfile = () => {
             <div className="user-section" ref={userMenuRef}>
               {/* Notificaciones */}
               <div className="notification-container" ref={notificationsRef}>
-                <button 
+                {/* <button 
                   className="icon-btn notification-btn"
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                 >
@@ -287,7 +287,7 @@ const ClientProfile = () => {
                   {unreadNotifications > 0 && (
                     <span className="notification-badge">{unreadNotifications}</span>
                   )}
-                </button>
+                </button> */}
                 
                 {notificationsOpen && (
                   <div className="notification-dropdown">
@@ -338,7 +338,7 @@ const ClientProfile = () => {
                         <span className="material-symbols-outlined"></span>
                         Mi Perfil
                       </a>
-                      <a 
+                      {/* <a 
                         className="dropdown-item" 
                         href="#"
                         onClick={(e) => {
@@ -349,7 +349,7 @@ const ClientProfile = () => {
                       >
                         <span className="material-symbols-outlined"></span>
                         Configuración
-                      </a>
+                      </a> */}
                       <div className="dropdown-divider"></div>
                       <a className="dropdown-item" onClick={handleLogout}>
                         <span className="material-symbols-outlined"></span>
@@ -539,7 +539,7 @@ const ClientProfile = () => {
                     
                     <div className="settings-options">
                       {/* Opción de Notificaciones */}
-                      <div className="setting-item">
+                      {/* <div className="setting-item">
                         <div className="setting-info">
                           <h3>Notificaciones</h3>
                           <p>Gestiona tus preferencias de notificaciones</p>
@@ -547,10 +547,10 @@ const ClientProfile = () => {
                         <button className="setting-toggle">
                           <span className="toggle-switch"></span>
                         </button>
-                      </div>
+                      </div> */}
 
                       {/* Opción de Privacidad */}
-                      <div className="setting-item">
+                      {/* <div className="setting-item">
                         <div className="setting-info">
                           <h3>Privacidad</h3>
                           <p>Controla quién puede ver tu información</p>
@@ -558,10 +558,10 @@ const ClientProfile = () => {
                         <button className="setting-btn">
                           <span className="material-symbols-outlined"></span>
                         </button>
-                      </div>
+                      </div> */}
 
                       {/* Opción de Seguridad */}
-                      <div className="setting-item">
+                      {/* <div className="setting-item">
                         <div className="setting-info">
                           <h3>Seguridad</h3>
                           <p>Cambia tu contraseña y configura la autenticación</p>
@@ -569,7 +569,7 @@ const ClientProfile = () => {
                         <button className="setting-btn">
                           <span className="material-symbols-outlined"></span>
                         </button>
-                      </div>
+                      </div> */}
 
                       {/* Separador */}
                       <div className="settings-divider"></div>

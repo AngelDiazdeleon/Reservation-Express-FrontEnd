@@ -402,15 +402,6 @@ const MisTerrazas = () => {
             <div className="user-section" ref={userMenuRef}>
               {/* Notificaciones */}
               <div className="notification-container" ref={notificationsRef}>
-                <button 
-                  className="icon-btn notification-btn"
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                >
-                  <span className="material-symbols-outlined">notifications</span>
-                  {unreadNotifications > 0 && (
-                    <span className="notification-badge">{unreadNotifications}</span>
-                  )}
-                </button>
                 
                 {notificationsOpen && (
                   <div className="notification-dropdown">
@@ -458,19 +449,12 @@ const MisTerrazas = () => {
                   {userMenuOpen && (
                     <div className="user-dropdown">
                       <a className="dropdown-item" href="/host/profile">
-                        <span className="material-symbols-outlined">person</span>
+                        <span className="material-symbols-outlined"></span>
                         Mi Perfil
-                      </a>
-                      <a 
-                        className="dropdown-item" 
-                        href="/host/configuracion"
-                      >
-                        <span className="material-symbols-outlined">settings</span>
-                        Configuración
                       </a>
                       <div className="dropdown-divider"></div>
                       <a className="dropdown-item" onClick={handleLogout}>
-                        <span className="material-symbols-outlined">logout</span>
+                        <span className="material-symbols-outlined"></span>
                         Cerrar Sesión
                       </a>
                     </div>
@@ -509,7 +493,7 @@ const MisTerrazas = () => {
                 href="/host/dashboard"
                 onClick={() => setActiveMenu('inicio')}
               >
-                <span className="material-symbols-outlined">home</span>
+                <span className="material-symbols-outlined"></span>
                 <span>Inicio</span>
               </a>
               <a 
@@ -517,15 +501,15 @@ const MisTerrazas = () => {
                 href="/host/MyTerraces"
                 onClick={() => setActiveMenu('terrazas')}
               >
-                <span className="material-symbols-outlined">terrace</span>
+                <span className="material-symbols-outlined"></span>
                 <span>Mis Terrazas</span>
               </a>
               <a 
                 className={`nav-item ${activeMenu === 'reservaciones' ? 'active' : ''}`}
-                href="/host/reservations"
+                href="/host/Reservation"
                 onClick={() => setActiveMenu('reservaciones')}
               >
-                <span className="material-symbols-outlined">calendar_month</span>
+                <span className="material-symbols-outlined"></span>
                 <span>Reservaciones</span>
               </a>
               <a 
@@ -533,8 +517,8 @@ const MisTerrazas = () => {
                 href="/host/DocumentVerification"
                 onClick={() => setActiveMenu('nueva-terraza')}
               >
-                <span className="material-symbols-outlined">add</span>
-                <span>Subir nueva terraza</span>
+                <span className="material-symbols-outlined"></span>
+                <span>Subir Permisos </span>
               </a>
             </nav>
           </div>
@@ -547,11 +531,7 @@ const MisTerrazas = () => {
             {user && (
               <div className="profile-header">
                 <div className="profile-info">
-                  <div className="avatar-container">
-                    <div className="profile-avatar">
-                      <span>{getInitial()}</span>
-                    </div>
-                  </div>
+                  
                   <div className="profile-greeting">
                     <h1>¡Hola, {user.name}!</h1>
                     <p>Bienvenido de nuevo a tu perfil de anfitrión</p>
@@ -574,7 +554,7 @@ const MisTerrazas = () => {
                     className="btn-primary"
                     onClick={() => window.location.href = '/host/DocumentVerification'}
                   >
-                    <span className="material-symbols-outlined">add</span>
+                    <span className="material-symbols-outlined"></span>
                     Nueva Terraza
                   </button>
                 </div>
@@ -610,7 +590,7 @@ const MisTerrazas = () => {
               <div className="search-filter-section">
                 <div className="search-container">
                   <div className="search-input-wrapper">
-                    <span className="material-symbols-outlined search-icon">search</span>
+                    <span className="material-symbols-outlined search-icon"></span>
                     <input 
                       type="text"
                       className="search-input"
@@ -694,15 +674,15 @@ const MisTerrazas = () => {
                           </p>
                           <div className="terraza-details">
                             <div className="terraza-detail">
-                              <span className="material-symbols-outlined">groups</span>
+                              <span className="material-symbols-outlined">Capacidad</span>
                               <span>Capacidad: {terraza.terraceData.capacity}</span>
                             </div>
                             <div className="terraza-detail">
-                              <span className="material-symbols-outlined">location_on</span>
+                              <span className="material-symbols-outlined">Localización</span>
                               <span>{terraza.terraceData.location}</span>
                             </div>
                             <div className="terraza-detail">
-                              <span className="material-symbols-outlined">date_range</span>
+                              <span className="material-symbols-outlined">Fecha</span>
                               <span>Creada: {formatDate(terraza.createdAt)}</span>
                             </div>
                           </div>
@@ -733,7 +713,7 @@ const MisTerrazas = () => {
               {/* Empty State */}
               {!loadingTerrazas && filteredTerrazas.length === 0 && (
                 <div className="empty-state">
-                  <span className="material-symbols-outlined">deck</span>
+                  <span className="material-symbols-outlined"></span>
                   <h3>No se encontraron terrazas</h3>
                   <p>
                     {terrazas.length === 0 
@@ -744,7 +724,7 @@ const MisTerrazas = () => {
                     className="btn-primary"
                     onClick={() => window.location.href = '/host/DocumentVerification'}
                   >
-                    <span className="material-symbols-outlined">add</span>
+                    <span className="material-symbols-outlined"></span>
                     {terrazas.length === 0 ? 'Publicar mi primera terraza' : 'Nueva Terraza'}
                   </button>
                 </div>

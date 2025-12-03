@@ -340,14 +340,6 @@ const TerraceDetails: React.FC = () => {
       <main className="terraza-detail-main">
         <div className="title-container">
           <h1 className="page-title">{terrazaData.nombre}</h1>
-          <div className="subtitle">
-            <div className="rating">
-              <span className="material-symbols-outlined star-icon">star</span>
-              <span className="rating-value">{terrazaData.calificacion}</span>
-              <span className="rating-count">({terrazaData.reseñas} reseñas)</span>
-            </div>
-            <span className="location">{terrazaData.ubicacion}</span>
-          </div>
         </div>
 
         {error && (
@@ -399,7 +391,7 @@ const TerraceDetails: React.FC = () => {
               <h2 className="section-title">Capacidad</h2>
               <div className="features-grid">
                 <div className="feature-item">
-                  <span className="material-symbols-outlined feature-icon">groups</span>
+                  <span className="material-symbols-outlined feature-icon"></span>
                   <span className="feature-text">Hasta {terrazaData.capacidad} personas</span>
                 </div>
               </div>
@@ -413,7 +405,7 @@ const TerraceDetails: React.FC = () => {
                 {terrazaData.reglas.split('\n').map((rule, index) => (
                   rule.trim() && (
                     <li key={index} className="rule-item">
-                      <span className="material-symbols-outlined rule-icon">check_circle</span>
+                      <span className="material-symbols-outlined rule-icon"></span>
                       {rule.trim()}
                     </li>
                   )
@@ -430,7 +422,7 @@ const TerraceDetails: React.FC = () => {
               </div>
 
               <div className="calendar-section">
-                <h3 className="calendar-title">Selecciona tu fecha</h3>
+                <h3 className="">Selecciona tu fecha</h3>
                 
                 <div className="calendar">
                   <div className="calendar-header">
@@ -439,7 +431,7 @@ const TerraceDetails: React.FC = () => {
                       onClick={handlePrevMonth}
                       aria-label="Mes anterior"
                     >
-                      <span className="material-symbols-outlined">chevron_left</span>
+                      <span className="material-symbols-outlined">◀</span>
                     </button>
                     <span className="calendar-month">
                       {monthNames[currentMonth]} {currentYear}
@@ -449,7 +441,7 @@ const TerraceDetails: React.FC = () => {
                       onClick={handleNextMonth}
                       aria-label="Mes siguiente"
                     >
-                      <span className="material-symbols-outlined">chevron_right</span>
+                      <span className="material-symbols-outlined">▶</span>
                     </button>
                   </div>
                   
@@ -466,28 +458,9 @@ const TerraceDetails: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="calendar-legend">
-                  <div className="legend-item">
-                    <div className="legend-color available"></div>
-                    <span>Disponible</span>
-                  </div>
-                  <div className="legend-item">
-                    <div className="legend-color selected"></div>
-                    <span>Seleccionado</span>
-                  </div>
-                  <div className="legend-item">
-                    <div className="legend-color occupied"></div>
-                    <span>Ocupado</span>
-                  </div>
-                  <div className="legend-item">
-                    <div className="legend-color today"></div>
-                    <span>Hoy</span>
-                  </div>
-                </div>
-
                 {selectedDate && (
                   <div className="selected-date-info">
-                    <span className="material-symbols-outlined">calendar_month</span>
+                    <span className="material-symbols-outlined"></span>
                     <span>Fecha seleccionada: <strong>{formatSelectedDate()}</strong></span>
                   </div>
                 )}
@@ -499,7 +472,7 @@ const TerraceDetails: React.FC = () => {
                   onClick={handleReservar}
                   disabled={!selectedDate}
                 >
-                  <span className="material-symbols-outlined">event_available</span>
+                  <span className="material-symbols-outlined"></span>
                   Apartar Fecha
                 </button>
                 <button 
@@ -507,24 +480,8 @@ const TerraceDetails: React.FC = () => {
                   onClick={handleSolicitarVisita}
                   disabled={!selectedDate}
                 >
-                  <span className="material-symbols-outlined">visibility</span>
+                  <span className="material-symbols-outlined"></span>
                   Solicitar una visita
-                </button>
-              </div>
-
-              <div className="host-section">
-                <div className="host-info">
-                  <div className="host-avatar">
-                    {terrazaData.propietario.nombre.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="host-name">Anfitrión: {terrazaData.propietario.nombre}</p>
-                    <p className="host-date">Se unió en 2021</p>
-                  </div>
-                </div>
-                <button className="contact-btn" onClick={handleContactar}>
-                  <span className="material-symbols-outlined">mail</span>
-                  Contactar
                 </button>
               </div>
             </div>

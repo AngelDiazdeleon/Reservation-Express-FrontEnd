@@ -21,6 +21,7 @@ import DocumentVerification from './page/host/DocumentVerification';
 import MisTerrazas from './page/host/MyTerraces';
 import PublicarTerraza from './page/host/addTerrace';
 import MembershipPlans from './page/host/MembershipPlans';
+import ReservationsHost from './page/host/Reservations'
 // ---------PAGINAS DE ADMIN--------------
 import AdminDashboard from './page/admin/Dashboard';
 import AdminProfile from './page/admin/Profile';
@@ -87,6 +88,14 @@ createRoot(document.getElementById('root')!).render(
           element={
             <ProtectedRoute allowedRoles={['host']}>
               <HostDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/host/Reservation"
+          element={
+            <ProtectedRoute allowedRoles={['host']}>
+              <ReservationsHost />
             </ProtectedRoute>
           }
         />

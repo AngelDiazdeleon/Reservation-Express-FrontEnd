@@ -341,7 +341,7 @@ const MyReservations: React.FC = () => {
             <nav className="nav-section">
               <div className="nav-links">
                 <Link className="nav-link" to="/client/home">Explorar</Link>
-                <Link className="nav-link active" to="/client/reservations">Reservaciones</Link>
+                <Link className="nav-link active" to="/client/Reservation">Reservaciones</Link>
               </div>
               
               <div className="user-section" ref={userMenuRef}>
@@ -461,7 +461,7 @@ const MyReservations: React.FC = () => {
           <nav className="nav-section">
             <div className="nav-links">
               <Link className="nav-link" to="/client/home">Explorar</Link>
-              <Link className="nav-link active" to="/client/reservations">Reservaciones</Link>
+              <Link className="nav-link active" to="/client/MyResarvation">Reservaciones</Link>
             </div>
             
             <div className="user-section" ref={userMenuRef}>
@@ -480,12 +480,12 @@ const MyReservations: React.FC = () => {
                   {userMenuOpen && (
                     <div className="user-dropdown">
                       <Link className="dropdown-item" to="/client/profile">
-                        <span className="material-symbols-outlined">person</span>
+                        <span className="material-symbols-outlined"></span>
                         Mi Perfil
                       </Link>
                       <div className="dropdown-divider"></div>
                       <button className="dropdown-item" onClick={handleLogout} type="button">
-                        <span className="material-symbols-outlined">logout</span>
+                        <span className="material-symbols-outlined"></span>
                         Cerrar Sesión
                       </button>
                     </div>
@@ -577,7 +577,7 @@ const MyReservations: React.FC = () => {
 
           <div className="filters-container">
             <div className="search-box">
-              <span className="search-icon material-symbols-outlined">search</span>
+              <span className="search-icon material-symbols-outlined"></span>
               <input
                 type="text"
                 placeholder="Buscar por nombre de terraza..."
@@ -585,19 +585,6 @@ const MyReservations: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
               />
-            </div>
-            
-            <div className="select-wrapper">
-              <select 
-                value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value)}
-                className="time-select"
-              >
-                <option value="30-dias">Próximos 30 días</option>
-                <option value="3-meses">Próximos 3 meses</option>
-                <option value="todo">Todo el historial</option>
-              </select>
-              <span className="select-arrow material-symbols-outlined"></span>
             </div>
           </div>
 
@@ -638,11 +625,11 @@ const MyReservations: React.FC = () => {
                       
                       <div className="card-details">
                         <div className="detail-item">
-                          <span className="material-symbols-outlined">calendar_today</span>
+                          <span className="material-symbols-outlined">Fecha</span>
                           <span>{formatDate(res.fechaReserva)}</span>
                         </div>
                         <div className="detail-item">
-                          <span className="material-symbols-outlined">schedule</span>
+                          <span className="material-symbols-outlined">Hora</span>
                           <span>
                             {formatTime(res.horaInicio)} - {formatTime(res.horaFin)}
                           </span>
@@ -771,12 +758,12 @@ const MyReservations: React.FC = () => {
           {filteredReservations.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon">
-                <span className="material-symbols-outlined">event</span>
+                <span className="material-symbols-outlined">Reservaciones</span>
               </div>
               <h3>Aún no tienes reservas activas</h3>
               <p>Parece que no tienes ningún evento o cita programada. ¡Encuentra el lugar perfecto para tu próximo evento!</p>
               <Link to="/client/home" className="btn-explore">
-                <span className="material-symbols-outlined">explore</span>
+                <span className="material-symbols-outlined"></span>
                 Explorar Terrazas
               </Link>
             </div>
