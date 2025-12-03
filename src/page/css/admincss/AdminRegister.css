@@ -2,9 +2,9 @@
 
 :root {
   /* Variables del login */
-  --primary-color: #4f46e5;
-  --primary-dark: #4338ca;
-  --primary-light: #818cf8;
+    --primary-color: #62BEB2;
+  --primary-dark: #2A9D8F;
+  --primary-light: #7ec5bc;
   --button-register-login: #62BEB2;
   --background-light: #ffffff;
   --background-dark: #1f2937;

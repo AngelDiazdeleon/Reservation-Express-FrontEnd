@@ -1024,3 +1024,288 @@
     width: 350px;
   }
 }
+
+
+/* -------------------------------------------OFFLINEEEEEEEEEEEEEEEEE---------------------- */
+
+
+/* Estilos para modo offline en Reservation */
+.offline-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 0;
+  animation: slideDown 0.3s ease-out;
+}
+
+.offline-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.offline-content .material-symbols-outlined {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.offline-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.offline-text strong {
+  font-weight: 600;
+}
+
+.offline-text span {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.offline-sync-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.offline-sync-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.offline-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.offline-close-btn:hover {
+  opacity: 1;
+}
+
+/* Indicador offline pequeño */
+.offline-indicator-small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.offline-indicator-small .material-symbols-outlined {
+  font-size: 16px;
+}
+
+/* Botón de sincronización */
+.sync-button {
+  position: relative;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sync-button:hover {
+  background: #4338ca;
+  transform: rotate(180deg);
+}
+
+.sync-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Encabezado con acciones */
+.heading-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Badge offline en tarjeta de terraza */
+.badge-offline {
+  background: #8b5cf6;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.badge-offline .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* Botón de confirmar en modo offline */
+.confirm-button.offline-mode {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #7c3aed;
+}
+
+.confirm-button.offline-mode:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+}
+
+.confirm-button.offline-mode .material-symbols-outlined {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+/* Nota offline en tarjetas */
+.offline-note {
+  background: #f3e8ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.offline-note .material-symbols-outlined {
+  color: #8b5cf6;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.offline-note p {
+  margin: 0;
+  font-size: 14px;
+  color: #4c1d95;
+}
+
+.offline-notice {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.offline-notice .material-symbols-outlined {
+  color: #d97706;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Animaciones */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .offline-content {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .offline-sync-btn {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .offline-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+  
+  .heading-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .heading-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

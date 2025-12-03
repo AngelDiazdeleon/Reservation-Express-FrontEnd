@@ -747,3 +747,192 @@
     width: 100%;
   }
 }
+
+
+
+/* Estilos para las funcionalidades offline */
+
+/* Encabezado con estadísticas */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.offline-stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 280px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.offline-stats-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.offline-stats-content {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.offline-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.stat-number.success {
+  color: #10b981;
+}
+
+.stat-number.warning {
+  color: #f59e0b;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.offline-sync-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.offline-sync-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Badge para reservas offline */
+.card-type-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.offline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.offline-badge.offline-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.offline-badge.offline-synced {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.offline-badge .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* Tarjeta de reserva offline */
+.reservation-card.offline-created {
+  border-left: 4px solid #667eea;
+  position: relative;
+}
+
+.reservation-card.offline-created::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  opacity: 0.3;
+}
+
+/* Nota offline */
+.offline-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #92400e;
+  margin-top: 8px;
+}
+
+.offline-note .material-symbols-outlined {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* Estado vacío mejorado */
+.empty-state .btn-explore {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 20px;
+}
+
+.empty-state .btn-explore:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-row {
+    flex-direction: column;
+  }
+  
+  .offline-stats-card {
+    width: 100%;
+  }
+  
+  .offline-stats-content {
+    justify-content: space-around;
+  }
+}
