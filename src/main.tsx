@@ -11,6 +11,9 @@ import Login from './page/common/Login';
 // ---------PAGINAS DE CLIENTE--------------
 import ClientHome from './page/client/home';
 import ClientProfile from './page/client/Profile';
+import TerraceDetails from './page/client/terraceDetails';
+import ReservationClient from './page/client/Reservation';
+import MyReservations from './page/client/MyReservation';
 // ---------PAGINAS DE HOST--------------
 import HostDashboard from './page/host/Dashboard';
 import HostProfile from './page/host/profile';
@@ -44,6 +47,14 @@ createRoot(document.getElementById('root')!).render(
           }
         />
         <Route
+          path="/client/Reservation"
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <ReservationClient/>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/client/Profile"
           element={
             <ProtectedRoute allowedRoles={['client']}>
@@ -51,6 +62,23 @@ createRoot(document.getElementById('root')!).render(
             </ProtectedRoute>
           }
         />
+         <Route
+          path="/client/terraceDetail/:id"  // ← Con :id
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <TerraceDetails/>  {/* Tu componente TerraceDetails */}
+            </ProtectedRoute>
+          }
+        />
+         <Route
+          path="/client/MyResarvation"
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <MyReservations/>
+            </ProtectedRoute>
+          }
+        />
+        
 
 {/* -------------------------------------HOST DUEÑOS DE LAS TERRAZAS-------------------------------------------------------------------------------------- */}
         {/* Host */}

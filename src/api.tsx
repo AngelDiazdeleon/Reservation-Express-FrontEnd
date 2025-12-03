@@ -1,9 +1,12 @@
+// api.tsx
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api', // ← Valor por defecto local
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
 });
+
 console.log('🔗 API URL:', import.meta.env.VITE_API_URL);
+
 export function setAuth(token: string | null) {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -41,5 +44,12 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+// Exportar funciones específicas para reservas
+export const reservationApi = {
+  createReservation: (data: any) => api.post('/reservations/create', data),
+  getMyReservations: () => api.get('/reservations/my-reservations'),
+  cancelReservation: (id: string) => api.put(`/reservations/${id}/cancel`),
+};
 
 export default api;
