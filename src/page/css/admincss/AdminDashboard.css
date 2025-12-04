@@ -640,14 +640,14 @@
 .detail-label {
   flex: 1;
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: white;
   font-weight: 500;
 }
 
 .detail-value {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: white;
 }
 
 /* COLORES PARA LOS DETALLES */

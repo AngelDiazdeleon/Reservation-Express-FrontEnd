@@ -384,13 +384,13 @@ const Dashboard = () => {
                   <span className="stat-label">Terrazas</span>
                 </div>
               </div>
-              <div className="stat-card">
+              {/* <div className="stat-card">
                 <DollarSign size={20} />
                 <div>
                   <span className="stat-value">{formatMoney(stats.comisionesMes)}</span>
                   <span className="stat-label">Comisiones</span>
                 </div>
-              </div>
+              </div> */}
               <div className="stat-card">
                 <FileCheck size={20} />
                 <div>
@@ -425,26 +425,26 @@ const Dashboard = () => {
               </button>
               <button
                 className="nav-item"
-                onClick={() => navigate("")}
+                onClick={() => navigate("/admin/Documents")}
               >
                 <Calendar size={18} />
-                <span>Gestión de Reservas</span>
+                <span>Gestión permisos</span>
               </button>
-              <button
+              {/* <button
                 className="nav-item"
                 onClick={() => navigate("/admin/comisiones")}
               >
                 <DollarSign size={18} />
                 <span>Comisiones</span>
-              </button>
+              </button> */}
               <div className="sidebar-divider"></div>
-              <button
+              {/* <button
                 className="nav-item"
                 onClick={() => navigate("/admin/configuracion")}
               >
                 <Settings size={18} />
                 <span>Configuración</span>
-              </button>
+              </button> */}
             </nav>
           </div>
         </aside>
@@ -530,11 +530,11 @@ const Dashboard = () => {
                         <span className="detail-label">Rechazadas:</span>
                         <span className="detail-value">{formatNumber(detalles.terrazas.rechazadas)}</span>
                       </div>
-                      <div className="detail-row">
+                      {/* <div className="detail-row">
                         <Building size={14} />
                         <span className="detail-label">Inactivas:</span>
                         <span className="detail-value">{formatNumber(detalles.terrazas.inactivas)}</span>
-                      </div>
+                      </div> */}
                     </div>
                   )}
                 </div>
@@ -619,11 +619,11 @@ const Dashboard = () => {
                         <span className="detail-label">Total reservas:</span>
                         <span className="detail-value">{formatNumber(detalles.reservas.total)}</span>
                       </div>
-                      <div className="detail-row">
+                      {/* <div className="detail-row">
                         <Calendar size={14} />
                         <span className="detail-label">Reservas:</span>
                         <span className="detail-value">{formatNumber(detalles.reservas.reservas)}</span>
-                      </div>
+                      </div> */}
                       <div className="detail-row">
                         <Calendar size={14} />
                         <span className="detail-label">Visitas:</span>
@@ -644,7 +644,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* TARJETA DE COMISIONES */}
-                <div className="stat-card-detailed">
+                {/* <div className="stat-card-detailed">
                   <div 
                     className="stat-card-header"
                     onClick={() => navigate("/admin/comisiones")}
@@ -688,7 +688,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                </div> */}
               </div>
 
               {/* GRÁFICO Y ESTADÍSTICAS RÁPIDAS */}

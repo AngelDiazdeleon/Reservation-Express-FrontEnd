@@ -22,11 +22,13 @@ import MisTerrazas from './page/host/MyTerraces';
 import PublicarTerraza from './page/host/addTerrace';
 import MembershipPlans from './page/host/MembershipPlans';
 import ReservationsHost from './page/host/Reservations'
+import TerrazaDetalles from './page/host/terrazaDetail'
 // ---------PAGINAS DE ADMIN--------------
 import AdminDashboard from './page/admin/Dashboard';
 import AdminProfile from './page/admin/Profile';
 import AdminPermission from './page/admin/PermissionManagement';
 import AdminRegister from './page/admin/RegisterAdmin';
+import Documents from './page/admin/Documents'
 
 // Rutas protegidas
 import ProtectedRoute from './routers/ProtectedRoute';
@@ -92,6 +94,14 @@ createRoot(document.getElementById('root')!).render(
           }
         />
         <Route
+          path="/host/terrazaDetail"
+          element={
+            <ProtectedRoute allowedRoles={['host']}>
+              <TerrazaDetalles />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/host/Reservation"
           element={
             <ProtectedRoute allowedRoles={['host']}>
@@ -149,7 +159,14 @@ createRoot(document.getElementById('root')!).render(
               <AdminDashboard />
             </ProtectedRoute>
           }
-        /> 
+        /> <Route
+          path="/admin/Documents"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Documents />
+            </ProtectedRoute>
+          }
+        />
          <Route
           path="/admin/RegisterAdmin"
           element={

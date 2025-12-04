@@ -52,6 +52,8 @@ interface Terrace {
   reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
+  // Agregar documentos del usuario
+  userDocuments?: Document[];
 }
 
 interface User {
@@ -173,54 +175,138 @@ const PermissionManagement: React.FC = () => {
         return;
       }
 
-      console.log('📡 [DEBUG] Cargando terrazas...');
-      
-      let response = await fetch('http://localhost:4000/api/publication-requests/pending-terraces', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      let terracesData: any[] = [];
+      let debugInfo: any = {
+        attempts: [],
+        timestamp: new Date().toISOString()
+      };
+
+      // Intentar diferentes endpoints en orden
+      const endpoints = [
+        {
+          name: 'admin/pending',
+          url: 'http://localhost:4000/api/publication-requests/admin/pending'
+        },
+        {
+          name: 'publication-requests',
+          url: 'http://localhost:4000/api/publication-requests'
+        },
+        {
+          name: 'pending-terraces',
+          url: 'http://localhost:4000/api/publication-requests/pending-terraces'
+        },
+        {
+          name: 'admin/pending-terraces',
+          url: 'http://localhost:4000/api/admin/pending-terraces'
         }
-      });
-      
-      console.log('📡 [DEBUG] Ruta 1 - Estado:', response.status);
-      
-      if (!response.ok) {
-        console.log('⚠️ [DEBUG] Probando ruta alternativa...');
-        response = await fetch('http://localhost:4000/api/admin/pending-terraces', {
-          headers: {
-            'Authorization': `Bearer ${token}`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`📡 [DEBUG] Probando endpoint: ${endpoint.name} (${endpoint.url})`);
+          
+          const response = await fetch(endpoint.url, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          const attemptInfo = {
+            endpoint: endpoint.name,
+            url: endpoint.url,
+            status: response.status,
+            statusText: response.statusText,
+            success: response.ok
+          };
+          
+          debugInfo.attempts.push(attemptInfo);
+          console.log(`📡 [DEBUG] ${endpoint.name}: ${response.status} ${response.statusText}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`✅ [DEBUG] Éxito en ${endpoint.name}:`, data);
+            
+            // Extraer datos según la estructura de respuesta
+            if (data.terraces && Array.isArray(data.terraces)) {
+              terracesData = data.terraces;
+              debugInfo.selectedEndpoint = endpoint.name;
+              debugInfo.dataStructure = 'data.terraces';
+              break;
+            } else if (data.data && Array.isArray(data.data)) {
+              terracesData = data.data;
+              debugInfo.selectedEndpoint = endpoint.name;
+              debugInfo.dataStructure = 'data.data';
+              break;
+            } else if (Array.isArray(data)) {
+              terracesData = data;
+              debugInfo.selectedEndpoint = endpoint.name;
+              debugInfo.dataStructure = 'array directo';
+              break;
+            } else if (data.list && Array.isArray(data.list)) {
+              terracesData = data.list;
+              debugInfo.selectedEndpoint = endpoint.name;
+              debugInfo.dataStructure = 'data.list';
+              break;
+            }
           }
-        });
-        console.log('📡 [DEBUG] Ruta 2 - Estado:', response.status);
-      }
-      
-      if (!response.ok) {
-        console.log('⚠️ [DEBUG] Probando ruta general...');
-        response = await fetch('http://localhost:4000/api/publication-requests', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        console.log('📡 [DEBUG] Ruta 3 - Estado:', response.status);
-      }
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📨 [DEBUG] Datos de terrazas recibidos:', data);
-        
-        let terracesData = data.terraces || data.data || [];
-        
-        if (Array.isArray(data) && !terracesData.length) {
-          terracesData = data;
+        } catch (endpointError) {
+          console.warn(`⚠️ [DEBUG] Error en endpoint ${endpoint.name}:`, endpointError);
+          
         }
+      }
+
+      console.log(`✅ [DEBUG] Total terrazas encontradas: ${terracesData.length}`);
+      console.log('📊 [DEBUG] Debug info:', debugInfo);
+      
+      // Guardar debug info
+      setDebugInfo(debugInfo);
+      
+      if (terracesData.length > 0) {
+        // Mapear los datos a la estructura esperada
+        const mappedTerraces = terracesData.map((terraza: any, index: number) => {
+          // Extraer datos según diferentes estructuras posibles
+          const terraceData = terraza.terraceData || terraza;
+          const owner = terraza.owner || {};
+          const photos = terraza.photos || [];
+          
+          return {
+            _id: terraza._id || `temp-${index}-${Date.now()}`,
+            terraceData: {
+              name: terraceData.name || terraceData.nombre || 'Sin nombre',
+              description: terraceData.description || terraceData.descripcion || '',
+              location: terraceData.location || terraceData.ubicacion || '',
+              capacity: terraceData.capacity || terraceData.capacidad || 0,
+              price: terraceData.price || terraceData.precio || 0,
+              contactPhone: terraceData.contactPhone || terraceData.contacto?.telefono || '',
+              contactEmail: terraceData.contactEmail || terraceData.contacto?.email || '',
+              amenities: terraceData.amenities || [],
+              rules: terraceData.rules || terraceData.reglas || ''
+            },
+            owner: {
+              _id: owner._id || owner.id || `owner-${index}`,
+              name: owner.name || owner.nombre || 'Anfitrión',
+              email: owner.email || owner.correo || '',
+              phone: owner.phone || owner.telefono || owner.teléfono || ''
+            },
+            photos: photos,
+            status: terraza.status || 'pending',
+            adminNotes: terraza.adminNotes || '',
+            reviewedBy: terraza.reviewedBy,
+            reviewedAt: terraza.reviewedAt,
+            createdAt: terraza.createdAt || new Date().toISOString(),
+            updatedAt: terraza.updatedAt || new Date().toISOString(),
+            // Documentos del usuario (si vienen en la respuesta)
+            userDocuments: terraza.documents || terraza.userDocuments || []
+          };
+        });
         
-        console.log(`✅ [DEBUG] ${terracesData.length} terrazas cargadas`);
-        console.log('🏢 [DEBUG] Ejemplo de terraza:', terracesData[0]);
-        setTerraces(terracesData);
+        console.log('🏢 [DEBUG] Terrazas mapeadas:', mappedTerraces);
+        setTerraces(mappedTerraces);
       } else {
-        const errorData = await response.json();
-        console.error('❌ [DEBUG] Error cargando terrazas:', errorData);
-        setError(errorData.message || `Error ${response.status}: ${response.statusText}`);
+        // Si no hay datos, intentar cargar datos de prueba para debug
+        console.log('⚠️ [DEBUG] No se encontraron terrazas, cargando datos de prueba');
       }
+      
     } catch (error: any) {
       console.error('❌ [DEBUG] Error en loadTerraces:', error);
       setError(error.message || 'Error de conexión con el servidor');
@@ -229,6 +315,10 @@ const PermissionManagement: React.FC = () => {
     }
   };
 
+// Función para cargar datos de prueba cuando no hay conexión o datos
+
+
+  // FUNCIÓN MEJORADA CON MÁS DEBUGGING
   // FUNCIÓN MEJORADA CON MÁS DEBUGGING
   const loadUserDocuments = async (userId: string) => {
     try {
@@ -245,21 +335,23 @@ const PermissionManagement: React.FC = () => {
         return;
       }
 
+      let response: Response;
+      let responseData: any;
+      
       // PRIMERO: Probar la ruta específica para admin
       const adminUrl = `http://localhost:4000/api/document-verification/admin/user-documents/${userId}`;
       console.log('📄 [DEBUG] Intentando URL de admin:', adminUrl);
       
-      let response = await fetch(adminUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      console.log('📄 [DEBUG] Respuesta de admin - Estado:', response.status, response.statusText);
-      console.log('📄 [DEBUG] Respuesta de admin - Headers:', Object.fromEntries(response.headers.entries()));
-      
-      // SI FALLA, PROBAR LA RUTA REGULAR
-      if (!response.ok) {
+      try {
+        response = await fetch(adminUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        console.log('📄 [DEBUG] Respuesta de admin - Estado:', response.status, response.statusText);
+        
+      } catch (error) {
         console.log('⚠️ [DEBUG] Ruta de admin falló, probando ruta regular...');
         const regularUrl = `http://localhost:4000/api/document-verification/user-documents/${userId}`;
         console.log('📄 [DEBUG] Intentando URL regular:', regularUrl);
@@ -269,59 +361,44 @@ const PermissionManagement: React.FC = () => {
             'Authorization': `Bearer ${token}`
           }
         });
-        
-        console.log('📄 [DEBUG] Respuesta regular - Estado:', response.status, response.statusText);
-      }
-      
-      // SI AÚN FALLA, PROBAR RUTA SIN USERID
-      if (!response.ok) {
-        console.log('⚠️ [DEBUG] Todas las rutas fallaron, probando ruta general...');
-        const generalUrl = `http://localhost:4000/api/document-verification/all-documents`;
-        console.log('📄 [DEBUG] Intentando URL general:', generalUrl);
-        
-        response = await fetch(generalUrl, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        console.log('📄 [DEBUG] Respuesta general - Estado:', response.status, response.statusText);
       }
       
       const responseText = await response.text();
       console.log('📄 [DEBUG] Respuesta como texto:', responseText.substring(0, 500));
       
-      let data;
       try {
-        data = responseText ? JSON.parse(responseText) : {};
+        responseData = responseText ? JSON.parse(responseText) : {};
       } catch (parseError) {
         console.error('❌ [DEBUG] Error parseando JSON:', parseError);
-        data = {};
+        responseData = {};
       }
       
-      console.log('📄 [DEBUG] Datos parseados:', data);
+      console.log('📄 [DEBUG] Datos parseados:', responseData);
       
-      // Guardar info de debug
-      setDebugInfo({
-        timestamp: new Date().toISOString(),
-        userId,
-        responseStatus: response.status,
-        responseStatusText: response.statusText,
-        data: data
-      });
+      // Guardar info de debug CORREGIDO
+      // setDebugInfo(prevDebugInfo => ({
+      //   ...prevDebugInfo,
+      //   documentsDebug: {
+      //     timestamp: new Date().toISOString(),
+      //     userId: userId,
+      //     responseStatus: response.status,
+      //     responseStatusText: response.statusText,
+      //     data: responseData
+      //   }
+      // }));
       
       if (response.ok) {
         // Intentar diferentes estructuras de respuesta
         let documents = [];
         
-        if (data.documents && Array.isArray(data.documents)) {
-          documents = data.documents;
+        if (responseData.documents && Array.isArray(responseData.documents)) {
+          documents = responseData.documents;
           console.log('📄 [DEBUG] Documentos encontrados en data.documents:', documents.length);
-        } else if (Array.isArray(data)) {
-          documents = data;
+        } else if (Array.isArray(responseData)) {
+          documents = responseData;
           console.log('📄 [DEBUG] Documentos encontrados como array directo:', documents.length);
-        } else if (data.data && Array.isArray(data.data)) {
-          documents = data.data;
+        } else if (responseData.data && Array.isArray(responseData.data)) {
+          documents = responseData.data;
           console.log('📄 [DEBUG] Documentos encontrados en data.data:', documents.length);
         } else {
           console.log('⚠️ [DEBUG] No se encontraron documentos en la respuesta');
@@ -359,84 +436,16 @@ const PermissionManagement: React.FC = () => {
           console.log('✅ [DEBUG] Documentos procesados:', documentsWithUrl);
           setUserDocuments(documentsWithUrl);
         } else {
-          console.log('📄 [DEBUG] No hay documentos, mostrando datos de prueba');
-          
-          // DATOS DE PRUEBA PARA DEBUG
-          const mockDocuments: Document[] = [
-            {
-              _id: 'mock-1',
-              fileName: 'Principal.png',
-              category: 'identificacion',
-              status: 'pending',
-              uploadDate: new Date().toISOString(),
-              mimeType: 'image/png',
-              fileSize: 421902,
-              filePath: 'img-1764740281349-tjbdul.png',
-              userId: userId,
-              downloadUrl: '#',
-              description: 'Identificación Oficial (MOCK)'
-            },
-            {
-              _id: 'mock-2',
-              fileName: 'Banner.png',
-              category: 'permisos_terrazas',
-              status: 'pending',
-              uploadDate: new Date().toISOString(),
-              mimeType: 'image/png',
-              fileSize: 1318893,
-              filePath: 'img-1764740281349-pgvm60.png',
-              userId: userId,
-              downloadUrl: '#',
-              description: 'Permisos de Terrazas (MOCK)'
-            }
-          ];
-          
-          console.log('📄 [DEBUG] Estableciendo documentos mock');
-          setUserDocuments(mockDocuments);
+          console.log('📄 [DEBUG] No hay documentos del usuario');
+          setUserDocuments([]);
         }
       } else {
-        console.error('❌ [DEBUG] Error en la respuesta:', data);
-        
-        // Aún así mostrar datos de prueba
-        const mockDocuments: Document[] = [
-          {
-            _id: 'error-mock-1',
-            fileName: 'Documento de Prueba 1',
-            category: 'identificacion',
-            status: 'pending',
-            uploadDate: new Date().toISOString(),
-            mimeType: 'image/png',
-            fileSize: 100000,
-            filePath: 'test.png',
-            userId: userId,
-            downloadUrl: '#',
-            description: 'Documento de prueba por error'
-          }
-        ];
-        
-        setUserDocuments(mockDocuments);
+        console.error('❌ [DEBUG] Error en la respuesta:', responseData);
+        setUserDocuments([]);
       }
     } catch (error) {
       console.error('❌ [DEBUG] Error en loadUserDocuments:', error);
-      
-      // Datos de prueba como fallback
-      const mockDocuments: Document[] = [
-        {
-          _id: 'catch-mock-1',
-          fileName: 'Documento Catch',
-          category: 'general',
-          status: 'pending',
-          uploadDate: new Date().toISOString(),
-          mimeType: 'application/octet-stream',
-          fileSize: 0,
-          filePath: '',
-          userId: userId,
-          downloadUrl: '#',
-          description: 'Documento de fallback'
-        }
-      ];
-      
-      setUserDocuments(mockDocuments);
+      setUserDocuments([]);
     } finally {
       console.log('📄 [DEBUG] ========== FINALIZANDO loadUserDocuments ==========');
       setLoadingDocuments(false);
@@ -517,11 +526,37 @@ const PermissionManagement: React.FC = () => {
     
     setSelectedTerrace(terrace);
     
-    if (terrace.owner._id) {
-      console.log('🔍 [DEBUG] Llamando a loadUserDocuments con ID:', terrace.owner._id);
+    // Verificar si ya tenemos documentos cargados para este usuario
+    const existingDocuments = terrace.userDocuments || [];
+    
+    if (existingDocuments && existingDocuments.length > 0) {
+      console.log('📄 [DEBUG] Usando documentos ya cargados:', existingDocuments.length);
+      
+      // Mapear documentos a la estructura esperada
+      const mappedDocuments = existingDocuments.map((doc: any) => ({
+        _id: doc._id,
+        fileName: doc.fileName,
+        category: doc.category,
+        status: doc.status,
+        uploadDate: doc.uploadDate,
+        adminNotes: doc.adminNotes,
+        reviewDate: doc.reviewDate,
+        mimeType: doc.mimeType,
+        fileSize: doc.fileSize,
+        filePath: doc.filePath || '',
+        userId: terrace.owner._id,
+        downloadUrl: doc.downloadUrl || `http://localhost:4000/api/document-verification/download/${doc._id}`,
+        fileType: doc.fileType,
+        description: doc.description
+      }));
+      
+      setUserDocuments(mappedDocuments);
+    } else if (terrace.owner._id) {
+      console.log('📄 [DEBUG] No hay documentos cargados, llamando a loadUserDocuments');
       await loadUserDocuments(terrace.owner._id);
     } else {
       console.error('❌ [DEBUG] ERROR: No hay owner._id en la terraza');
+      setUserDocuments([]);
     }
     
     setShowDocumentsModal(true);
@@ -698,6 +733,7 @@ const PermissionManagement: React.FC = () => {
 
   const pendingCount = terraces.filter(t => t.status === 'pending').length;
   const rejectedCount = terraces.filter(t => t.status === 'rejected').length;
+  const aproveedgCount = terraces.filter(t => t.status === 'approved').length;
 
   // Añadir efecto para debug
   useEffect(() => {
@@ -738,26 +774,26 @@ const PermissionManagement: React.FC = () => {
   return (
     <div className="permission-management-container">
       {/* Panel de debug (solo desarrollo) */}
-{debugInfo && (
-  <div className="debug-panel" style={{
-    position: 'fixed',
-    bottom: '10px',
-    right: '10px',
-    background: '#f0f0f0',
-    border: '1px solid #ccc',
-    padding: '10px',
-    borderRadius: '5px',
-    maxWidth: '400px',
-    maxHeight: '300px',
-    overflow: 'auto',
-    zIndex: 9999,
-    fontSize: '12px'
-  }}>
-    <h4>🔧 Debug Info</h4>
-    <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-    <button onClick={() => setDebugInfo(null)}>Cerrar</button>
-  </div>
-)}
+      {/* {debugInfo && (
+        <div className="debug-panel" style={{
+          position: 'fixed',
+          bottom: '10px',
+          right: '10px',
+          background: '#f0f0f0',
+          border: '1px solid #ccc',
+          padding: '10px',
+          borderRadius: '5px',
+          maxWidth: '400px',
+          maxHeight: '300px',
+          overflow: 'auto',
+          zIndex: 9999,
+          fontSize: '12px'
+        }}>
+          <h4>🔧 Debug Info</h4>
+          <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          <button onClick={() => setDebugInfo(null)}>Cerrar</button>
+        </div>
+      )} */}
 
       {/* Header */}
       <div className="approval-header">
@@ -790,6 +826,10 @@ const PermissionManagement: React.FC = () => {
             <span className="stat-number">{rejectedCount}</span>
             <span className="stat-label">Rechazadas</span>
           </div>
+          {/* <div className="stat-card">
+            <span className="stat-number">{aproveedgCount}</span>
+            <span className="stat-label">Aprovadas</span>
+          </div> */}
         </div>
         
         <div className="controls-section">
@@ -826,30 +866,80 @@ const PermissionManagement: React.FC = () => {
           </div>
           
           <div className="action-buttons-container">
-            <button 
-              className="refresh-btn"
-              onClick={() => {
-                console.log('🔄 [DEBUG] Botón refresh clickeado');
-                setRefreshTrigger(prev => prev + 1);
-              }}
-              disabled={processing}
-            >
-              {processing ? 'Actualizando...' : '🔄 Actualizar'}
-            </button>
-          </div>
+        <button 
+          className="refresh-btn"
+          onClick={() => {
+            console.log('🔄 [DEBUG] Botón refresh clickeado');
+            setRefreshTrigger(prev => prev + 1);
+          }}
+          disabled={processing}
+        >
+          {processing ? 'Actualizando...' : '🔄 Actualizar'}
+        </button>
+  
+        {/* <button 
+          className="debug-btn"
+          onClick={async () => {
+            console.log('🔍 [DEBUG] Ejecutando verificación profunda...');
+            
+            try {
+              const token = localStorage.getItem('token');
+              
+              // 1. Verificar usuario
+              const userResponse = await fetch('http://localhost:4000/api/user/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              const userData = await userResponse.json();
+              console.log('👤 [DEBUG] Usuario actual:', userData);
+              
+              // 2. Verificar endpoint de terrazas directamente
+              console.log('📡 [DEBUG] Llamando directamente al endpoint de terrazas...');
+              const terracesResponse = await fetch('http://localhost:4000/api/publication-requests/admin/pending', {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              
+              console.log('📡 [DEBUG] Status:', terracesResponse.status, terracesResponse.statusText);
+              
+              if (terracesResponse.ok) {
+                const terracesData = await terracesResponse.json();
+                console.log('📊 [DEBUG] Respuesta completa del backend:', terracesData);
+                
+                // Mostrar en un alert para fácil visualización
+                alert(`Respuesta del backend:
+      Status: ${terracesResponse.status}
+      Éxito: ${terracesData.success}
+      Terrazas encontradas: ${terracesData.count || 0}
+      Estructura: ${JSON.stringify(Object.keys(terracesData))}
+      `);
+              } else {
+                const errorText = await terracesResponse.text();
+                console.error('❌ [DEBUG] Error del backend:', errorText);
+                alert(`Error del backend: ${terracesResponse.status} ${terracesResponse.statusText}\n${errorText}`);
+              }
+              
+            } catch (error: any) {
+              console.error('❌ [DEBUG] Error en verificación:', error);
+              alert(`Error de conexión: ${error.message}`);
+            }
+          }}
+          style={{ marginLeft: '10px', background: '#17a2b8' }}
+        >
+          🔍 Verificar Backend
+        </button> */}
+</div>
         </div>
       </div>
 
+      {/* Tabla de solicitudes */}
+      {/* Tabla de solicitudes */}
       {/* Tabla de solicitudes */}
       <div className="requests-section">
         <div className="section-header">
           <h2 className="section-title">
             Solicitudes en Proceso ({filteredTerraces.length})
           </h2>
-          <div className="table-actions">
-            <span className="table-info">
-              Mostrando {filteredTerraces.length} de {terraces.length} solicitudes
-            </span>
+          <div className="table-info">
+            Mostrando {filteredTerraces.length} de {terraces.length} solicitudes
           </div>
         </div>
         
@@ -872,97 +962,122 @@ const PermissionManagement: React.FC = () => {
             <p>Todas las solicitudes han sido procesadas o no hay coincidencias con tu búsqueda.</p>
           </div>
         ) : (
-          <div className="terraces-table-container">
-            <table className="terraces-table">
-              <thead>
-                <tr>
-                  <th>TERRAZA</th>
-                  <th>PROPIETARIO</th>
-                  <th>FECHA SOLICITUD</th>
-                  <th>DOCUMENTOS</th>
-                  <th>ESTADO</th>
-                  <th>ACCIÓN</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTerraces.map(terrace => (
-                  <tr key={terrace._id} className={`terrace-row status-${terrace.status}`}>
-                    <td className="terrace-cell">
-                      <div className="terrace-info">
-                        <div className="terrace-image">
-                          <img 
-                            src={getTerraceImageUrl(terrace)} 
-                            alt={terrace.terraceData.name}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://images.unsplash.com/photo-1549294413-26f195200c16?w=400&auto=format&fit=crop';
-                            }}
-                          />
+          <div className="terraces-container">
+            {filteredTerraces.map(terrace => (
+              <div key={terrace._id} className="terrace-request-card">
+                {/* Título de la solicitud */}
+                <div className="request-header">
+                  <div className="request-title-section">
+                    <h3 className="request-title">Solicitudes en Proceso ({filteredTerraces.length})</h3>
+                    <h4 className="terrace-subtitle">{terrace.terraceData.name}</h4>
+                  </div>
+                  <div className="request-status-badge">
+                    {getStatusBadge(terrace.status)}
+                  </div>
+                </div>
+                
+                {/* Contenido en dos columnas */}
+                <div className="request-content">
+                  {/* Columna izquierda */}
+                  <div className="request-left-column">
+                    {/* Terraza */}
+                    <div className="request-section">
+                      <div className="section-header-row">
+                        <span className="section-icon">🏠</span>
+                        <h5 className="section-title">TERRAZA</h5>
+                      </div>
+                      <div className="section-content">
+                        <div className="terrace-detail-row">
+                          <span className="detail-label">CAPACIDAD:</span>
+                          <span className="detail-value">{terrace.terraceData.capacity} personas</span>
                         </div>
-                        <div className="terrace-details">
-                          <strong className="terrace-name">{terrace.terraceData.name}</strong>
-                          <p className="terrace-location">📍 {terrace.terraceData.location}</p>
-                          <p className="terrace-capacity">👥 Capacidad: {terrace.terraceData.capacity} personas</p>
-                          <p className="terrace-price">💰 ${terrace.terraceData.price.toLocaleString()}/hora</p>
+                        <div className="terrace-detail-row">
+                          <span className="detail-label">PRECIO:</span>
+                          <span className="detail-value">${terrace.terraceData.price.toLocaleString()}/hora</span>
                         </div>
                       </div>
-                    </td>
-                    <td className="owner-cell">
-                      <div className="owner-info">
-                        <strong>{terrace.owner.name}</strong>
+                    </div>
+                    
+                    {/* Propietario */}
+                    <div className="request-section">
+                      <div className="section-header-row">
+                        <span className="section-icon">👤</span>
+                        <h5 className="section-title">PROPIETARIO</h5>
+                      </div>
+                      <div className="section-content">
+                        <p className="owner-name">{terrace.owner.name}</p>
                         <p className="owner-email">{terrace.owner.email}</p>
-                        {terrace.owner.phone && (
-                          <p className="owner-phone">📱 {terrace.owner.phone}</p>
-                        )}
-                        <p className="contact-info">
-                          <small>Contacto: {terrace.terraceData.contactPhone || 'No disponible'}</small>
-                        </p>
+                        <div className="owner-contact">
+                          <span className="contact-label">Contacto:</span>
+                          <span className="contact-value">{terrace.owner.phone || terrace.terraceData.contactPhone || 'No disponible'}</span>
+                        </div>
                       </div>
-                    </td>
-                    <td className="date-cell">
-                      <div className="date-info">
-                        <strong>Solicitud:</strong>
-                        <p>{formatDate(terrace.createdAt)}</p>
-                        {terrace.reviewedAt && (
-                          <>
-                            <strong>Revisión:</strong>
-                            <p>{formatDate(terrace.reviewedAt)}</p>
-                          </>
-                        )}
+                    </div>
+                    
+                    {/* Fechas */}
+                    <div className="request-section">
+                      <div className="section-header-row">
+                        <span className="section-icon">📅</span>
+                        <h5 className="section-title">FECHAS</h5>
                       </div>
-                    </td>
-                    <td className="documents-cell">
-                      <div className="documents-info">
+                      <div className="section-content">
+                        <div className="date-row">
+                          <span className="date-label">Solicitud:</span>
+                          <span className="date-value">{formatDate(terrace.createdAt)}</span>
+                        </div>
+                        <div className="date-row">
+                          <span className="date-label">Revisión:</span>
+                          <span className="date-value">{terrace.reviewedAt ? formatDate(terrace.reviewedAt) : 'Pendiente'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Columna derecha */}
+                  <div className="request-right-column">
+                    {/* Documentos
+                    <div className="request-section">
+                      <div className="section-header-row">
+                        <span className="section-icon">📄</span>
+                        <h5 className="section-title">DOCUMENTOS</h5>
+                      </div>
+                      <div className="section-content">
                         <button 
                           className="view-documents-btn"
-                          onClick={() => {
-                            console.log('📄 [DEBUG] Click en Ver Documentos para:', terrace.terraceData.name);
-                            handleViewDocuments(terrace);
-                          }}
-                          title="Ver documentos REALES del propietario"
+                          onClick={() => handleViewDocuments(terrace)}
                         >
                           📄 Ver Documentos
                         </button>
-                        <div className="documents-summary">
-                          <div className="review-status">
-                            <span className="review-badge pending-review">
-                              👤 ID: {terrace.owner._id?.substring(0, 8) || 'N/A'}...
-                            </span>
-                          </div>
-                          <p className="documents-hint">
-                            <small>Click para ver documentos reales del propietario</small>
+                        <div className="documents-codes">
+                          <span className="doc-code">@{terrace.owner._id?.substring(0, 8) || '09x64b7z'}</span>
+                          <span className="doc-code">@{terrace.owner._id?.substring(8, 16) || '18-888'}</span>
+                        </div>
+                        <p className="documents-hint">
+                          Click para ver documentos reales del propietario
+                        </p>
+                      </div>
+                    </div> */}
+                    
+                    {/* Notas */}
+                    {terrace.adminNotes && (
+                      <div className="request-section">
+                        <div className="section-header-row">
+                          <span className="section-icon">📝</span>
+                          <h5 className="section-title">NOTAS</h5>
+                        </div>
+                        <div className="section-content">
+                          <p className="admin-notes">
+                            {terrace.adminNotes}
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="status-cell">
-                      {getStatusBadge(terrace.status)}
-                      {terrace.adminNotes && (
-                        <div className="admin-notes-preview" title={terrace.adminNotes}>
-                          📝 Notas: {terrace.adminNotes.substring(0, 30)}...
-                        </div>
-                      )}
-                    </td>
-                    <td className="action-cell">
+                    )}
+                    
+                    {/* Declaratorio */}
+                    
+                    
+                    {/* Botones de acción */}
+                    <div className="action-section">
                       <div className="action-buttons">
                         {terrace.status === 'pending' && (
                           <>
@@ -991,12 +1106,17 @@ const PermissionManagement: React.FC = () => {
                             ✏️ Editar Rechazo
                           </button>
                         )}
+                        {terrace.status === 'approved' && (
+                          <div className="approved-message">
+                            ✅ Terraza Aprobada
+                          </div>
+                        )}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -1008,6 +1128,13 @@ const PermissionManagement: React.FC = () => {
             <div className="modal-header">
               <h2>📋 Documentos de {selectedTerrace.owner.name}</h2>
               <p className="modal-subtitle">Propietario de: {selectedTerrace.terraceData.name}</p>
+              <div className="source-indicator">
+                {selectedTerrace.userDocuments && selectedTerrace.userDocuments.length > 0 ? (
+                  <span className="source-badge source-cached">🔄 Cargado desde lista principal</span>
+                ) : (
+                  <span className="source-badge source-api">📡 Cargado desde API separada</span>
+                )}
+              </div>
               <p className="debug-info" style={{ fontSize: '12px', color: '#666' }}>
                 UserID: {selectedTerrace.owner._id} | 
                 Documentos: {userDocuments.length} | 

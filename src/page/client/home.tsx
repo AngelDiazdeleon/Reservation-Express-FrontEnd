@@ -408,8 +408,7 @@ const Home: React.FC = () => {
                   <div className="card-content">
                     <h4>{terraza.nombre}</h4>
                     <div className="card-rating">
-                      <span className="material-symbols-outlined">Valoración</span>
-                      <span>{terraza.calificacion}</span>
+                     
                     </div>
                   </div>
                 </Link>
@@ -594,8 +593,7 @@ const Home: React.FC = () => {
                     <div className="card-header">
                       <h3 className="card-title">{terraza.nombre}</h3>
                       <div className="rating">
-                        <span className="material-symbols-outlined">Valoración</span>
-                        <span className="rating-value">{terraza.calificacion}</span>
+                        
                       </div>
                     </div>
                     
@@ -663,28 +661,28 @@ const Home: React.FC = () => {
               <p>La plataforma líder para encontrar y reservar terrazas para tus eventos especiales.</p>
             </div>
             
-            <div className="footer-section">
+            {/* <div className="footer-section">
               <h4>Enlaces Rápidos</h4>
               <a href="/client/home">Explorar Terrazas</a>
               <a href="/client/MyResarvation">Reservaciones</a>
-            </div>
+            </div> */}
             
-            <div className="footer-section">
+            {/* <div className="footer-section">
               <h4>Legal</h4>
               <a href="/privacidad">Política de Privacidad</a>
               <a href="/terminos">Términos de Servicio</a>
               <a href="/cookies">Política de Cookies</a>
-            </div>
+            </div> */}
             
             <div className="footer-section">
               <h4>Contacto</h4>
               <p>contacto@Reservation.com</p>
               <p>+52 3333255511</p>
-              <div className="social-links">
+              {/* <div className="social-links">
                 <a href="https://facebook.com" aria-label="Facebook" target="_blank" rel="noopener noreferrer">📘</a>
                 <a href="https://instagram.com" aria-label="Instagram" target="_blank" rel="noopener noreferrer">📷</a>
                 <a href="https://twitter.com" aria-label="Twitter" target="_blank" rel="noopener noreferrer">🐦</a>
-              </div>
+              </div> */}
             </div>
           </div>
           

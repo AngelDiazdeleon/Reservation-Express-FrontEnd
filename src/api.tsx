@@ -353,7 +353,7 @@ createReservation: async (data: any) => {
   }
 };
 
-<<<<<<< HEAD
+
 // ------------------------------------------------------------
 // Funciones específicas para host
 export const hostApi = {
@@ -377,12 +377,12 @@ export const hostApi = {
     return navigator.onLine;
   }
 };
-=======
+
 // Exportar funciones para usuario
 export const userApi = {
   getProfile: () => api.get('/user/profile'),
   updateProfile: (data: any) => api.put('/user/profile', data),
 };
 
->>>>>>> bef6e0b340d2dacfe854c794923df7388db5121a
+
 export default api;

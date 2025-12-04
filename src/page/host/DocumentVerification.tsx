@@ -550,14 +550,23 @@ const DocumentVerification: React.FC = () => {
         <div className="header-container">
           <div className="logo-section">
             <div className="logo">
-              <span className="material-symbols-outlined">Reservation</span>
-              <h1>Express</h1>
+              <span className="material-symbols-outlined">terrace</span>
+              <h1>TerraceRent</h1>
             </div>
           </div>
           
           <nav className="nav-section">
             <div className="user-section" ref={userMenuRef}>
               <div className="notification-container" ref={notificationsRef}>
+                {/* <button 
+                  className="icon-btn notification-btn"
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                >
+                  <span className="material-symbols-outlined">🔔</span>
+                  {unreadNotifications > 0 && (
+                    <span className="notification-badge">{unreadNotifications}</span>
+                  )}
+                </button> */}
               </div>
               
               {user ? (
@@ -608,8 +617,9 @@ const DocumentVerification: React.FC = () => {
             <div className="sidebar-header">
               <div className="sidebar-logo">
                 <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M13.8261 30.5736C16.7203 29.8826 20.2244 29.4783 24 29.4783C27.7756 29.4783 31.2797 29.8826 34.1739 30.5736C36.9144 31.2278 39.9967 32.7669 41.3563 33.8352L24.8486 7.36089C24.4571 6.73303 23.5429 6.73303 23.1514 7.36089L6.64374 33.8352C8.00331 32.7669 11.0856 31.2278 13.8261 30.5736Z" fill="currentColor"></path>
                 </svg>
-                <h2>Resarvation Express</h2>
+                <h2>TerraceRent</h2>
               </div>
             </div>
             
@@ -631,7 +641,7 @@ const DocumentVerification: React.FC = () => {
               </a>
               <a 
                 className={`nav-item ${activeMenu === 'reservaciones' ? 'active' : ''}`}
-                href="/host/Reservation"
+                href="/host/reservations"
                 onClick={() => setActiveMenu('reservaciones')}
               >
                 <span className="material-symbols-outlined"></span>

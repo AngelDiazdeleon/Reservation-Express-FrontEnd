@@ -1,5 +1,5 @@
-// MyTerraces.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import "../css/hostcss/MyTerrace.css";
 import api from "../../api";
 
@@ -57,6 +57,7 @@ interface Terraza {
 }
 
 const MisTerrazas = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('todas');
   const [activeMenu, setActiveMenu] = useState('terrazas');
@@ -72,6 +73,7 @@ const MisTerrazas = () => {
   const [user, setUser] = useState<User | null>(null);
   const [terrazas, setTerrazas] = useState<Terraza[]>([]);
   const [loadingTerrazas, setLoadingTerrazas] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Notificaciones de ejemplo
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -239,19 +241,27 @@ const MisTerrazas = () => {
   // Obtener URL de la imagen (usando la primera foto)
   const getTerrazaImage = (terraza: Terraza) => {
     console.log('🖼️ Procesando imagen para:', terraza.terraceData.name);
+    console.log('📸 Fotos disponibles:', terraza.photos);
     
     if (terraza.photos && terraza.photos.length > 0) {
       const primeraFoto = terraza.photos[0];
-      console.log('📸 Foto encontrada:', primeraFoto);
+      console.log('📸 Primera foto:', primeraFoto);
       
-      // Para LocalFileService - usar el nombre del archivo
-      const fileName = primeraFoto.filename;
+      // Intentar diferentes formas de obtener el nombre del archivo
+      const fileName = primeraFoto.filename || primeraFoto.originalName || primeraFoto.filePath;
+      
       if (fileName) {
+        // 🚨 IMPORTANTE: Usa la ruta de API si tus imágenes están en GridFS
+        // Si usas uploads locales, ajusta esta ruta
         const imageUrl = `http://localhost:4000/api/terrace-images/${fileName}`;
+        
+        // O si están en la carpeta uploads:
+        // const imageUrl = `http://localhost:4000/uploads/images/${fileName}`;
+        
         console.log('🔗 URL generada:', imageUrl);
         return imageUrl;
       } else {
-        console.log('❌ Nombre de archivo no encontrado en la foto');
+        console.log('❌ No se pudo obtener nombre de archivo');
       }
     } else {
       console.log('❌ No hay fotos para esta terraza');
@@ -293,95 +303,90 @@ const MisTerrazas = () => {
     });
   };
 
+  // Ver detalles de la terraza
+  const handleViewDetails = (terrazaId: string) => {
+    navigate(`/host/terraza-detalles/${terrazaId}`);
+  };
+
   // Manejar eliminación de terraza
-  const handleDeleteTerraza = async (terrazaId: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar esta terraza?')) {
+  const handleDeleteTerraza = async (terrazaId: string, terrazaName: string, status: string) => {
+    let confirmMessage = `¿Estás seguro de que quieres eliminar la terraza "${terrazaName}"?\nEsta acción no se puede deshacer.`;
+    
+    if (status === 'approved') {
+      confirmMessage = `⚠️ ADVERTENCIA: Esta terraza está PUBLICADA.\n¿Estás seguro de eliminarla? Esto afectará a los usuarios que la hayan reservado.\n\n${confirmMessage}`;
+    }
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
+      setDeletingId(terrazaId);
       console.log('🗑️ Eliminando terraza:', terrazaId);
-      // Aquí puedes agregar la llamada a la API para eliminar cuando la implementes
-      // await api.delete(`/publication-requests/${terrazaId}`);
       
-      // Por ahora, solo actualizamos el estado local
-      setTerrazas(terrazas.filter(t => t._id !== terrazaId));
-      alert('Terraza eliminada exitosamente');
-    } catch (error) {
-      console.error('Error eliminando terraza:', error);
-      alert('Error al eliminar la terraza');
+      const response = await api.delete(`/publication-requests/${terrazaId}`);
+      
+      console.log('✅ Respuesta del servidor:', response.data);
+      
+      if (response.data.success) {
+        // Actualizar el estado local
+        setTerrazas(terrazas.filter(t => t._id !== terrazaId));
+        
+        // Mostrar mensaje de éxito
+        alert('✅ Terraza eliminada exitosamente');
+      } else {
+        alert('❌ Error del servidor: ' + response.data.message);
+      }
+    } catch (error: any) {
+      console.error('💥 Error eliminando terraza:', error);
+      console.error('📄 Datos del error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      if (error.response?.data?.message) {
+        alert('❌ Error: ' + error.response.data.message);
+      } else if (error.response?.status === 401) {
+        alert('❌ Sesión expirada. Por favor, vuelve a iniciar sesión.');
+        handleLogout();
+      } else if (error.response?.status === 403) {
+        alert('❌ No tienes permisos para eliminar esta terraza');
+      } else if (error.response?.status === 404) {
+        alert('❌ Terraza no encontrada');
+      } else {
+        alert('❌ Error del servidor al eliminar la terraza');
+      }
+    } finally {
+      setDeletingId(null);
     }
   };
 
   // Renderizar botones según el estado de la terraza
   const renderTerrazaActions = (terraza: Terraza) => {
-    switch (terraza.status) {
-      case 'approved':
-        // Terraza aprobada - mostrar todos los botones
-        return (
-          <>
-            <button className="action-btn" title="Editar terraza">
-              <span className="material-symbols-outlined">Editar</span>
-            </button>
-            <button className="action-btn" title="Ver detalles">
-              <span className="material-symbols-outlined">Ver</span>
-            </button>
-            <button className="action-btn" title="Ver reservas"> 
-              <span className="material-symbols-outlined">Fechas</span>
-            </button>
-            <button 
-              className="action-btn delete-btn" 
-              title="Eliminar terraza"
-              onClick={() => handleDeleteTerraza(terraza._id)}
-            >
-              <span className="material-symbols-outlined">Eliminar</span>
-            </button>
-          </>
-        );
-      
-      case 'pending':
-        // Terraza en revisión - solo eliminar y ver
-        return (
-          <>
-            <button className="action-btn" title="Ver detalles">
-              <span className="material-symbols-outlined">visibility</span>
-            </button>
-            <button 
-              className="action-btn delete-btn" 
-              title="Eliminar terraza"
-              onClick={() => handleDeleteTerraza(terraza._id)}
-            >
-              <span className="material-symbols-outlined">delete</span>
-            </button>
-          </>
-        );
-      
-      case 'rejected':
-        // Terraza rechazada - solo eliminar y ver
-        return (
-          <>
-            <button className="action-btn" title="Ver detalles">
-              <span className="material-symbols-outlined">visibility</span>
-            </button>
-            <button 
-              className="action-btn delete-btn" 
-              title="Eliminar terraza"
-              onClick={() => handleDeleteTerraza(terraza._id)}
-            >
-              <span className="material-symbols-outlined">delete</span>
-            </button>
-          </>
-        );
-      
-      default:
-        return null;
-    }
+    return (
+      <>
+        <button 
+          className="action-btn delete-btn" 
+          title="Eliminar terraza"
+          onClick={() => handleDeleteTerraza(terraza._id, terraza.terraceData.name, terraza.status)}
+          disabled={deletingId === terraza._id}
+        >
+          <span className="material-symbols-outlined">
+            {deletingId === terraza._id ? 'hourglass_empty' : 'delete'}
+          </span>
+        </button>
+      </>
+    );
   };
 
   if (loading) {
     return (
       <div className="mis-terrazas">
-        <div className="loading">Cargando...</div>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Cargando...</p>
+        </div>
       </div>
     );
   }
@@ -394,7 +399,7 @@ const MisTerrazas = () => {
           <div className="logo-section">
             <div className="logo">
               <span className="material-symbols-outlined">terrace</span>
-              <h1>TerrazaApp</h1>
+              <h1>Reservation Express</h1>
             </div>
           </div>
           
@@ -480,9 +485,9 @@ const MisTerrazas = () => {
               <div className="sidebar-logo">
                 <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                   <path d="M13.8261 30.5736C16.7203 29.8826 20.2244 29.4783 24 29.4783C27.7756 29.4783 31.2797 29.8826 34.1739 30.5736C36.9144 31.2278 39.9967 32.7669 41.3563 33.8352L24.8486 7.36089C24.4571 6.73303 23.5429 6.73303 23.1514 7.36089L6.64374 33.8352C8.00331 32.7669 11.0856 31.2278 13.8261 30.5736Z" fill="currentColor"></path>
-                  <path clipRule="evenodd" d="M39.998 35.764C39.9944 35.7463 39.9875 35.7155 39.9748 35.6706C39.9436 35.5601 39.8949 35.4259 39.8346 35.2825C39.8168 35.2403 39.7989 35.1993 39.7813 35.1602C38.5103 34.2887 35.9788 33.0607 33.7095 32.5189C30.9875 31.8691 27.6413 31.4783 24 31.4783C20.3587 31.4783 17.0125 31.8691 14.2905 32.5189C12.0012 33.0654 9.44505 34.3104 8.18538 35.1832C8.17384 35.2075 8.16216 35.233 8.15052 35.2592C8.09919 35.3751 8.05721 35.4886 8.02977 35.589C8.00356 35.6848 8.00039 35.7333 8.00004 35.7388C8.00004 35.739 8 35.7393 8.00004 35.7388C8.00004 35.7641 8.0104 36.0767 8.68485 36.6314C9.34546 37.1746 10.4222 37.7531 11.9291 38.2772C14.9242 39.319 19.1919 40 24 40C28.8081 40 33.0758 39.319 36.0709 38.2772C37.5778 37.7531 38.6545 37.1746 39.3151 36.6314C39.9006 36.1499 39.9857 35.8511 39.998 35.764ZM4.95178 32.7688L21.4543 6.30267C22.6288 4.4191 25.3712 4.41909 26.5457 6.30267L43.0534 32.777C43.0709 32.8052 43.0878 32.8338 43.104 32.8629L41.3563 33.8352C43.104 32.8629 43.1038 32.8626 43.104 32.8629L43.1051 32.865L43.1065 32.8675L43.1101 32.8739L43.1199 32.8918C43.1276 32.906 43.1377 32.9246 43.1497 32.9473C43.1738 32.9925 43.2062 33.0545 43.244 33.1299C43.319 33.2792 43.4196 33.489 43.5217 33.7317C43.6901 34.1321 44 34.9311 44 35.7391C44 37.4427 43.003 38.7775 41.8558 39.7209C40.6947 40.6757 39.1354 41.4464 37.385 42.0552C33.8654 43.2794 29.133 44 24 44C18.867 44 14.1346 43.2794 10.615 42.0552C8.86463 41.4464 7.30529 40.6757 6.14419 39.7209C4.99695 38.7775 3.99999 37.4427 3.99999 35.7391C3.99999 34.8725 4.29264 34.0922 4.49321 33.6393C4.60375 33.3898 4.71348 33.1804 4.79687 33.0311C4.83898 32.9556 4.87547 32.8935 4.9035 32.8471C4.91754 32.8238 4.92954 32.8043 4.93916 32.7889L4.94662 32.777L4.95178 32.7688ZM35.9868 29.004L24 9.77997L12.0131 29.004C12.4661 28.8609 12.9179 28.7342 13.3617 28.6282C16.4281 27.8961 20.0901 27.4783 24 27.4783C27.9099 27.4783 31.5719 27.8961 34.6383 28.6282C35.082 28.7342 35.5339 28.8609 35.9868 29.004Z" fill="currentColor" fillRule="evenodd"></path>
+                  <path clipRule="evenodd" d="M39.998 35.764C39.9944 35.7463 39.9875 35.7155 39.9748 35.6706C39.9436 35.5601 39.8949 35.4259 39.8346 35.2825C39.8168 35.2403 39.7989 35.1993 39.7813 35.1602C38.5103 34.2887 35.9788 33.0607 33.7095 32.5189C30.9875 31.8691 27.6413 31.4783 24 31.4783C20.3587 31.4783 17.0125 31.8691 14.2905 32.5189C12.0012 33.0654 9.44505 34.3104 8.18538 35.1832C8.17384 35.2075 8.16216 35.233 8.15052 35.2592C8.09919 35.3751 8.05721 35.4886 8.02977 35.589C8.00356 35.6848 8.00039 35.7333 8.00004 35.7388C8.00004 35.739 8 35.7393 8.00004 35.7388C8.00004 35.7641 8.0104 36.0767 8.68485 36.6314C9.34546 37.1746 10.4222 37.7531 11.9291 38.2772C14.9242 39.319 19.1919 40 24 40C28.8081 40 33.0758 39.319 36.0709 38.2772C37.5778 37.7531 38.6545 37.1746 39.3151 36.6314C39.9006 36.1499 39.9857 35.8511 39.998 35.764ZM4.95178 32.7688L21.4543 6.30267C22.6288 4.4191 25.3712 4.41909 26.5457 6.30267L43.0534 32.777C43.0709 32.8052 43.0878 32.8338 43.104 32.8629L41.3563 33.8352C43.104 32.8629 43.1038 32.8626 43.104 32.8629L43.1051 32.865L43.1065 32.8675L43.1101 32.8739L43.1199 32.8918C43.1276 32.906 43.1377 32.9246 43.1497 32.9473C43.1738 32.9925 43.2062 33.0545 43.244 33.1299C43.319 33.2792 43.4196 33.489 43.5217 33.7317C43.6901 34.1321 43.9999 34.9311 43.9999 35.7391C43.9999 37.4427 43.003 38.7775 41.8558 39.7209C40.6947 40.6757 39.1354 41.4464 37.385 42.0552C33.8654 43.2794 29.133 44 24 44C18.867 44 14.1346 43.2794 10.615 42.0552C8.86463 41.4464 7.30529 40.6757 6.14419 39.7209C4.99695 38.7775 3.99999 37.4427 3.99999 35.7391C3.99999 34.8725 4.29264 34.0922 4.49321 33.6393C4.60375 33.3898 4.71348 33.1804 4.79687 33.0311C4.83898 32.9556 4.87547 32.8935 4.9035 32.8471C4.91754 32.8238 4.92954 32.8043 4.93916 32.7889L4.94662 32.777L4.95178 32.7688ZM35.9868 29.004L24 9.77997L12.0131 29.004C12.4661 28.8609 12.9179 28.7342 13.3617 28.6282C16.4281 27.8961 20.0901 27.4783 24 27.4783C27.9099 27.4783 31.5719 27.8961 34.6383 28.6282C35.082 28.7342 35.5339 28.8609 35.9868 29.004Z" fill="currentColor" fillRule="evenodd"></path>
                 </svg>
-                <h2>TerraceRent</h2>
+                <h2>Reservation Express</h2>
               </div>
             </div>
             
@@ -518,7 +523,15 @@ const MisTerrazas = () => {
                 onClick={() => setActiveMenu('nueva-terraza')}
               >
                 <span className="material-symbols-outlined"></span>
-                <span>Subir Permisos </span>
+                <span>Nueva Terraza</span>
+              </a>
+              <a 
+                className={`nav-item ${activeMenu === 'permisos' ? 'active' : ''}`}
+                href="/host/DocumentVerification"
+                onClick={() => setActiveMenu('permisos')}
+              >
+                <span className="material-symbols-outlined"></span>
+                <span>Subir Permisos</span>
               </a>
             </nav>
           </div>
@@ -531,7 +544,6 @@ const MisTerrazas = () => {
             {user && (
               <div className="profile-header">
                 <div className="profile-info">
-                  
                   <div className="profile-greeting">
                     <h1>¡Hola, {user.name}!</h1>
                     <p>Bienvenido de nuevo a tu perfil de anfitrión</p>
@@ -552,7 +564,7 @@ const MisTerrazas = () => {
                 <div className="heading-actions">
                   <button 
                     className="btn-primary"
-                    onClick={() => window.location.href = '/host/DocumentVerification'}
+                    onClick={() => navigate('/host/nueva-terraza')}
                   >
                     <span className="material-symbols-outlined"></span>
                     Nueva Terraza
@@ -584,13 +596,21 @@ const MisTerrazas = () => {
                     <span className="stat-label">En Revisión</span>
                   </div>
                 </div>
+                <div className="stat-card">
+                  <div className="stat-content">
+                    <span className="stat-number">
+                      {terrazas.filter(t => t.status === 'rejected').length}
+                    </span>
+                    <span className="stat-label">Rechazadas</span>
+                  </div>
+                </div>
               </div>
 
               {/* SearchBar & Chips */}
               <div className="search-filter-section">
                 <div className="search-container">
                   <div className="search-input-wrapper">
-                    <span className="material-symbols-outlined search-icon"></span>
+                    <span className="material-symbols-outlined search-icon">search</span>
                     <input 
                       type="text"
                       className="search-input"
@@ -642,17 +662,24 @@ const MisTerrazas = () => {
                 <div className="terrazas-grid">
                   {filteredTerrazas.map(terraza => {
                     const estadoBadge = getEstadoBadge(terraza.status);
+                    const isDeleting = deletingId === terraza._id;
+                    
                     return (
                       <div key={terraza._id} className="terraza-card">
+                        {isDeleting && (
+                          <div className="deleting-overlay">
+                            <div className="deleting-spinner"></div>
+                            <p>Eliminando...</p>
+                          </div>
+                        )}
                         <div className="terraza-image-container">
                           <img
                             src={getTerrazaImage(terraza)}
                             alt={terraza.terraceData.name}
                             className="terraza-image"
                             onError={(e) => {
-                              console.error('❌ Error cargando imagen para:', terraza.terraceData.name);
-                              console.error('🔗 URL fallida:', e.currentTarget.src);
                               e.currentTarget.src = "https://images.unsplash.com/photo-1549294413-26f195200c16?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+                              console.log('❌ Error cargando imagen, usando placeholder');
                             }}
                             onLoad={() => {
                               console.log('✅ Imagen cargada exitosamente:', terraza.terraceData.name);
@@ -674,15 +701,15 @@ const MisTerrazas = () => {
                           </p>
                           <div className="terraza-details">
                             <div className="terraza-detail">
-                              <span className="material-symbols-outlined">Capacidad</span>
+                              <span className="material-symbols-outlined">group</span>
                               <span>Capacidad: {terraza.terraceData.capacity}</span>
                             </div>
                             <div className="terraza-detail">
-                              <span className="material-symbols-outlined">Localización</span>
+                              <span className="material-symbols-outlined">location_on</span>
                               <span>{terraza.terraceData.location}</span>
                             </div>
                             <div className="terraza-detail">
-                              <span className="material-symbols-outlined">Fecha</span>
+                              <span className="material-symbols-outlined">calendar_today</span>
                               <span>Creada: {formatDate(terraza.createdAt)}</span>
                             </div>
                           </div>
@@ -713,7 +740,7 @@ const MisTerrazas = () => {
               {/* Empty State */}
               {!loadingTerrazas && filteredTerrazas.length === 0 && (
                 <div className="empty-state">
-                  <span className="material-symbols-outlined"></span>
+                  <span className="material-symbols-outlined">terrace</span>
                   <h3>No se encontraron terrazas</h3>
                   <p>
                     {terrazas.length === 0 
@@ -722,9 +749,9 @@ const MisTerrazas = () => {
                   </p>
                   <button 
                     className="btn-primary"
-                    onClick={() => window.location.href = '/host/DocumentVerification'}
+                    onClick={() => navigate('/host/nueva-terraza')}
                   >
-                    <span className="material-symbols-outlined"></span>
+                    <span className="material-symbols-outlined">add</span>
                     {terrazas.length === 0 ? 'Publicar mi primera terraza' : 'Nueva Terraza'}
                   </button>
                 </div>
